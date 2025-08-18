@@ -15,18 +15,6 @@
       .replace(/'/g, "&#39;");
   }
 
-  function highlightSearchTerm(text, term) {
-    if (!term) return escapeHtml(text);
-
-    const escaped = escapeHtml(text);
-    const escapedTerm = escapeHtml(term);
-    const regex = new RegExp(
-      `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi"
-    );
-    return escaped.replace(regex, '<mark class="highlight">$1</mark>');
-  }
-
   function parseHunkHeader(header) {
     const match = header.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
     return match
@@ -60,49 +48,13 @@
   function renderHunk() {
     const lines = hunk.hunk_lines;
     const { oldStart, newStart } = parseHunkHeader(hunk.hunk_header);
-
-    // Find matching lines if searching
-    const searchLower = searchTerm.toLowerCase();
-    const matchingIndices = [];
-
-    if (searchTerm) {
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (
-          (line.startsWith("+") || line.startsWith("-")) &&
-          line.toLowerCase().includes(searchLower)
-        ) {
-          matchingIndices.push(i);
-        }
-      }
-    }
-
-    // Determine visible range
-    let start = 0;
-    let end = lines.length;
-
-    if (searchTerm && matchingIndices.length > 0) {
-      const minMatch = Math.min(...matchingIndices);
-      const maxMatch = Math.max(...matchingIndices);
-      start = Math.max(0, minMatch - contextSize);
-      end = Math.min(lines.length, maxMatch + contextSize + 1);
-    }
-
-    const visibleLines = lines.slice(start, end);
     const result = [];
 
     let oldLineNum = oldStart;
     let newLineNum = newStart;
 
-    // Adjust line numbers for lines before our slice
-    for (let i = 0; i < start; i++) {
-      const prefix = lines[i][0];
-      if (prefix === " " || prefix === "-") oldLineNum++;
-      if (prefix === " " || prefix === "+") newLineNum++;
-    }
-
-    for (let i = 0; i < visibleLines.length; i++) {
-      const line = visibleLines[i];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const prefix = line[0];
       const content = line.slice(1);
 
@@ -140,12 +92,16 @@
         highlightedContent = highlightedContent.replace(regex, '<mark class="highlight">$1</mark>');
       }
 
+      // Mark as match if line contains search term
+      const isMatch = searchTerm && (isAdded || isRemoved) && 
+                     line.toLowerCase().includes(searchTerm.toLowerCase());
+
       result.push({
         oldNum,
         newNum,
         content: highlightedContent,
         cssClasses,
-        isMatch: matchingIndices.includes(start + i),
+        isMatch,
       });
     }
 
