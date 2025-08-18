@@ -135,7 +135,10 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
                 i += 1;
                 
                 while i < lines.len() && !lines[i].starts_with("@@") && !lines[i].starts_with("diff --git") {
-                    body.push(lines[i].to_string());
+                    // Skip Git's "No newline at end of file" notice
+                    if !lines[i].starts_with("\\ No newline at end of file") {
+                        body.push(lines[i].to_string());
+                    }
                     i += 1;
                 }
                 
