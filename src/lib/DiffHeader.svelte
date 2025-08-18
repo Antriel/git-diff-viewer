@@ -66,7 +66,7 @@
     padding: 1rem;
     border: 1px solid #dee2e6;
     border-radius: 8px;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
   }
 
   .stats {

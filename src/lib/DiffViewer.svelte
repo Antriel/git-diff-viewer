@@ -89,8 +89,7 @@
   }
 
   .hunks-container {
-    max-height: 70vh;
-    overflow-y: auto;
+    /* Removed max-height and overflow-y to allow natural scrolling at page level */
   }
 
   @media (prefers-color-scheme: dark) {

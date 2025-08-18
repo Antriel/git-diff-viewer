@@ -116,16 +116,18 @@
   </header>
 
   {#if currentDirectory}
-    <DiffHeader
-      {gitDiffResult}
-      contextSize={currentContextSize}
-      {searchTerm}
-      {visibleCount}
-      totalCount={gitDiffResult?.hunks?.length || 0}
-      on:search={handleSearch}
-      on:refresh={handleRefresh}
-      on:contextChange={handleContextChange}
-    />
+    <div class="diff-header-wrapper">
+      <DiffHeader
+        {gitDiffResult}
+        contextSize={currentContextSize}
+        {searchTerm}
+        {visibleCount}
+        totalCount={gitDiffResult?.hunks?.length || 0}
+        on:search={handleSearch}
+        on:refresh={handleRefresh}
+        on:contextChange={handleContextChange}
+      />
+    </div>
   {/if}
 
   {#if loading}
@@ -175,18 +177,24 @@
   }
 
   .container {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: auto;
+    margin: 0;
     padding: 1rem;
+    height: auto;
   }
 
   header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
     flex-wrap: wrap;
     gap: 1rem;
+    position: sticky;
+    top: 0;
+    background: #f5f5f5;
+    z-index: 100;
+    padding: 1rem;
+    margin: -1rem -1rem 0 -1rem;
   }
 
   h1 {
@@ -292,14 +300,31 @@
     background: #0052a3;
   }
 
+  .diff-header-wrapper {
+    position: sticky;
+    top: 72px; /* Height of header */
+    background: #f5f5f5;
+    z-index: 99;
+    margin: 0 -1rem 1rem -1rem;
+    padding: 1rem;
+  }
+
   @media (prefers-color-scheme: dark) {
     :global(body) {
       background: #1a1a1a;
       color: #f6f6f6;
     }
 
+    header {
+      background: #1a1a1a;
+    }
+
     h1 {
       color: #f6f6f6;
+    }
+
+    .diff-header-wrapper {
+      background: #1a1a1a;
     }
 
     .welcome,

@@ -262,8 +262,8 @@
 
   .code-container {
     overflow-x: auto;
-    max-height: 500px;
-    overflow-y: auto;
+    overflow-y: hidden;
+    /* Removed max-height and disabled vertical scrolling to allow hunks to expand naturally */
   }
 
   .code {
