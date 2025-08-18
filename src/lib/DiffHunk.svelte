@@ -1,4 +1,6 @@
 <script>
+  import hljs from 'highlight.js';
+  
   let { hunk, searchTerm = "", hunkIndex = 0 } = $props();
 
   let contextSize = $state(3);
@@ -35,44 +37,24 @@
       : { oldStart: 1, newStart: 1 };
   }
 
-  function getLanguageFromExtension(ext) {
-    const langMap = {
-      js: "javascript",
-      jsx: "javascript",
-      ts: "typescript",
-      tsx: "typescript",
-      json: "json",
-      py: "python",
-      rb: "ruby",
-      java: "java",
-      go: "go",
-      rs: "rust",
-      php: "php",
-      cs: "csharp",
-      c: "c",
-      h: "c",
-      cpp: "cpp",
-      cc: "cpp",
-      cxx: "cpp",
-      hpp: "cpp",
-      hh: "cpp",
-      hxx: "cpp",
-      swift: "swift",
-      kt: "kotlin",
-      kts: "kotlin",
-      sh: "bash",
-      bash: "bash",
-      yml: "yaml",
-      yaml: "yaml",
-      md: "markdown",
-      html: "xml",
-      htm: "xml",
-      css: "css",
-      sql: "sql",
-      scala: "scala",
-      toml: "toml",
-    };
-    return langMap[ext?.toLowerCase()] || null;
+  function applySyntaxHighlighting(content, fileName) {
+    // Get file extension for language detection
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const language = hljs.getLanguage(ext);
+    
+    try {
+      if (language) {
+        const result = hljs.highlight(content, { language: ext });
+        return result.value;
+      } else {
+        // Try auto-detection if specific language not found
+        const result = hljs.highlightAuto(content);
+        return result.value;
+      }
+    } catch (error) {
+      console.warn('Syntax highlighting failed:', error);
+      return escapeHtml(content);
+    }
   }
 
   function renderHunk() {
@@ -145,10 +127,18 @@
       if (isAdded) cssClasses.push("added");
       if (isRemoved) cssClasses.push("removed");
 
-      const highlightedContent =
-        isAdded || isRemoved
-          ? highlightSearchTerm(content, searchTerm)
-          : escapeHtml(content);
+      // Apply syntax highlighting first
+      let highlightedContent = applySyntaxHighlighting(content, hunk.file_name);
+      
+      // Then apply search term highlighting if needed
+      if ((isAdded || isRemoved) && searchTerm) {
+        const escapedTerm = escapeHtml(searchTerm);
+        const regex = new RegExp(
+          `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+          "gi"
+        );
+        highlightedContent = highlightedContent.replace(regex, '<mark class="highlight">$1</mark>');
+      }
 
       result.push({
         oldNum,
@@ -223,6 +213,9 @@
 </div>
 
 <style>
+  /* Import highlight.js themes using CSS @import for better control */
+  @import 'highlight.js/styles/github.css' screen and (prefers-color-scheme: light);
+  @import 'highlight.js/styles/github-dark.css' screen and (prefers-color-scheme: dark);
   .hunk {
     border: 1px solid #ddd;
     margin: 1rem 0;
