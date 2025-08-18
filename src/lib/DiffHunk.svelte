@@ -112,19 +112,6 @@
     renderedLines = result;
   }
 
-  function copyHunk() {
-    const content = hunk.hunk_lines.join("\n");
-    navigator.clipboard
-      .writeText(content)
-      .then(() => {
-        // Simple visual feedback could be added here
-        console.log("Copied hunk to clipboard");
-      })
-      .catch((err) => {
-        console.error("Failed to copy:", err);
-      });
-  }
-
   // Re-render when hunk or search term changes
   $effect(() => {
     renderHunk();
@@ -142,10 +129,6 @@
       <span class="removed">-{hunk.stats.removed}</span>
       <span class="size">{(hunk.stats.size / 1024).toFixed(1)}KB</span>
     </div>
-  </div>
-
-  <div class="controls">
-    <button onclick={copyHunk} title="Copy hunk" class="copy-btn">📋</button>
   </div>
 
   <div class="code-container">
@@ -237,29 +220,6 @@
     background: #f8f9fa;
     border-bottom: 1px solid #eee;
     font-size: 0.85rem;
-  }
-
-  .controls button {
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 0.2rem 0.5rem;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-  }
-
-  .controls button:hover:not(:disabled) {
-    background: #f0f0f0;
-  }
-
-  .controls button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .copy-btn {
-    margin-left: auto;
   }
 
   .code-container {
@@ -356,16 +316,6 @@
       background: #333;
       border-color: #555;
       color: #f6f6f6;
-    }
-
-    .controls button {
-      background: #444;
-      border-color: #666;
-      color: #f6f6f6;
-    }
-
-    .controls button:hover:not(:disabled) {
-      background: #555;
     }
 
     .line-num {
