@@ -54,7 +54,7 @@
       <p>This repository has no uncommitted changes.</p>
     </div>
   {:else}
-    <div class="hunks-container">
+    <div>
       {#each filteredHunks as hunk, index}
         <DiffHunk {hunk} {searchTerm} hunkIndex={index} />
       {/each}
@@ -86,10 +86,6 @@
   .no-results p,
   .no-hunks p {
     margin: 0;
-  }
-
-  .hunks-container {
-    /* Removed max-height and overflow-y to allow natural scrolling at page level */
   }
 
   @media (prefers-color-scheme: dark) {

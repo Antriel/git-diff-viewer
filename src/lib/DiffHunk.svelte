@@ -49,7 +49,7 @@
     
     const now = new Date();
     const modifiedDate = new Date(isoString);
-    const diffMs = now - modifiedDate;
+    const diffMs = now.getTime() - modifiedDate.getTime();
     
     const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
     
