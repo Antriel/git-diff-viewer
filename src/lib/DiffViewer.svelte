@@ -3,7 +3,7 @@
   import DiffHunk from "./DiffHunk.svelte";
   import SearchBar from "./SearchBar.svelte";
 
-  let { gitDiffResult, currentDirectory } = $props();
+  let { gitDiffResult, currentDirectory, contextSize = 3 } = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -43,6 +43,15 @@
   function handleRefresh() {
     dispatch("refresh");
   }
+
+  function adjustContext(delta) {
+    const newContextSize = Math.max(0, contextSize + delta);
+    if (newContextSize !== contextSize) {
+      contextSize = newContextSize;
+      console.log(contextSize);
+      dispatch("contextChange", { contextLines: contextSize });
+    }
+  }
 </script>
 
 <div class="diff-viewer">
@@ -60,6 +69,12 @@
         totalCount={gitDiffResult.hunks.length}
         on:search={handleSearch}
       />
+      <div class="context-controls">
+        <span>Context:</span>
+        <button onclick={() => adjustContext(-1)} disabled={contextSize === 0}>-</button>
+        <span class="context-size">{contextSize}</span>
+        <button onclick={() => adjustContext(1)}>+</button>
+      </div>
       <button onclick={handleRefresh} class="refresh-btn" title="Refresh">
         🔄
       </button>
@@ -135,6 +150,38 @@
     background: #e9ecef;
   }
 
+  .context-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .context-controls button {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+
+  .context-controls button:hover:not(:disabled) {
+    background: #f0f0f0;
+  }
+
+  .context-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .context-size {
+    min-width: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+  }
+
   .no-results,
   .no-hunks {
     text-align: center;
@@ -179,6 +226,20 @@
     }
 
     .refresh-btn:hover {
+      background: #555;
+    }
+
+    .context-controls {
+      color: #f6f6f6;
+    }
+
+    .context-controls button {
+      background: #444;
+      border-color: #666;
+      color: #f6f6f6;
+    }
+
+    .context-controls button:hover:not(:disabled) {
       background: #555;
     }
 

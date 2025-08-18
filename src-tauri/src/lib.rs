@@ -37,7 +37,7 @@ pub struct TotalStats {
 }
 
 #[command]
-async fn get_git_diff(directory_path: String) -> Result<GitDiffResult, String> {
+async fn get_git_diff(directory_path: String, context_lines: Option<u32>) -> Result<GitDiffResult, String> {
     // Check if it's a git repository
     let git_check = Command::new("git")
         .args(&["rev-parse", "--git-dir"])
@@ -53,8 +53,9 @@ async fn get_git_diff(directory_path: String) -> Result<GitDiffResult, String> {
     }
 
     // Get git diff
+    let context_arg = format!("-U{}", context_lines.unwrap_or(3));
     let diff_output = Command::new("git")
-        .args(&["diff", "HEAD"])
+        .args(&["diff", &context_arg, "HEAD"])
         .current_dir(&directory_path)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -72,7 +73,7 @@ async fn get_git_diff(directory_path: String) -> Result<GitDiffResult, String> {
     if diff_text.trim().is_empty() {
         // Check for staged changes
         let staged_output = Command::new("git")
-            .args(&["diff", "--cached"])
+            .args(&["diff", &context_arg, "--cached"])
             .current_dir(&directory_path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

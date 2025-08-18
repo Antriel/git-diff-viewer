@@ -8,15 +8,19 @@
   let gitDiffResult = $state(null);
   let loading = $state(false);
   let error = $state("");
+  let currentContextSize = $state(3);
 
-  async function loadGitDiff(directory) {
+  async function loadGitDiff(directory, contextLines = null) {
     if (!directory) return;
+    
+    // Use current context size if not explicitly provided
+    const actualContextLines = contextLines !== null ? contextLines : currentContextSize;
     
     loading = true;
     error = "";
     
     try {
-      const result = await invoke("get_git_diff", { directoryPath: directory });
+      const result = await invoke("get_git_diff", { directoryPath: directory, contextLines: actualContextLines });
       gitDiffResult = result;
       
       // Save to localStorage for project history
@@ -58,6 +62,13 @@
     }
   }
 
+  function handleContextChange(event) {
+    currentContextSize = event.detail.contextLines;
+    if (currentDirectory) {
+      loadGitDiff(currentDirectory, event.detail.contextLines);
+    }
+  }
+
   onMount(() => {
     // Load the last opened project
     const savedProjects = JSON.parse(localStorage.getItem('gitDiffProjects') || '[]');
@@ -95,7 +106,9 @@
     <DiffViewer 
       {gitDiffResult} 
       {currentDirectory}
+      contextSize={currentContextSize}
       on:refresh={handleRefresh}
+      on:contextChange={handleContextChange}
     />
   {:else if currentDirectory}
     <div class="no-changes">

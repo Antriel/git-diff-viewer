@@ -3,7 +3,6 @@
   
   let { hunk, searchTerm = "", hunkIndex = 0 } = $props();
 
-  let contextSize = $state(3);
   let renderedLines = $state([]);
 
   function escapeHtml(str) {
@@ -108,10 +107,6 @@
     renderedLines = result;
   }
 
-  function adjustContext(delta) {
-    contextSize = Math.max(0, contextSize + delta);
-    renderHunk();
-  }
 
   function copyHunk() {
     const content = hunk.hunk_lines.join("\n");
@@ -146,12 +141,6 @@
   </div>
 
   <div class="controls">
-    <span>Context:</span>
-    <button onclick={() => adjustContext(-1)} disabled={contextSize === 0}
-      >-</button
-    >
-    <span class="context-size">{contextSize}</span>
-    <button onclick={() => adjustContext(1)}>+</button>
     <button onclick={copyHunk} title="Copy hunk" class="copy-btn">📋</button>
   </div>
 
@@ -261,12 +250,6 @@
   .controls button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .context-size {
-    min-width: 1.5rem;
-    text-align: center;
-    font-weight: bold;
   }
 
   .copy-btn {
