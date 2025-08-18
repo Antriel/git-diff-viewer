@@ -147,6 +147,7 @@
     <DiffViewer
       {gitDiffResult}
       {searchTerm}
+      {currentDirectory}
       on:visibleCountChange={handleVisibleCountChange}
     />
   {:else if currentDirectory}

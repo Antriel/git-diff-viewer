@@ -2,7 +2,7 @@
   import { createEventDispatcher } from "svelte";
   import DiffHunk from "./DiffHunk.svelte";
 
-  let { gitDiffResult, searchTerm = "" } = $props();
+  let { gitDiffResult, searchTerm = "", currentDirectory = "" } = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -56,7 +56,7 @@
   {:else}
     <div>
       {#each filteredHunks as hunk, index}
-        <DiffHunk {hunk} {searchTerm} hunkIndex={index} />
+        <DiffHunk {hunk} {searchTerm} {currentDirectory} hunkIndex={index} />
       {/each}
     </div>
   {/if}

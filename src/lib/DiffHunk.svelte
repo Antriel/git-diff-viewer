@@ -1,7 +1,8 @@
 <script>
   import hljs from "highlight.js";
+  import { invoke } from "@tauri-apps/api/core";
 
-  let { hunk, searchTerm = "", hunkIndex = 0 } = $props();
+  let { hunk, searchTerm = "", currentDirectory = "", hunkIndex = 0 } = $props();
 
   let renderedLines = $state([]);
 
@@ -22,6 +23,21 @@
           newStart: parseInt(match[2], 10),
         }
       : { oldStart: 1, newStart: 1 };
+  }
+
+  async function openFileInEditor() {
+    try {
+      const { newStart } = parseHunkHeader(hunk.hunk_header);
+      
+      await invoke("open_file_in_editor", {
+        filePath: hunk.file_name,
+        workingDirectory: currentDirectory,
+        lineNumber: newStart
+      });
+    } catch (error) {
+      console.error("Failed to open file in editor:", error);
+      alert(`Failed to open file: ${error}`);
+    }
   }
 
   function applySyntaxHighlighting(content, fileName) {
@@ -155,6 +171,7 @@
     <div class="file-info">
       <strong class="file-name">{hunk.file_name}</strong>
       <span class="hunk-location">{hunk.hunk_header}</span>
+      <button class="open-file-btn" onclick={openFileInEditor} title="Open file in editor">📂</button>
     </div>
     <div class="file-stats">
       <span class="added">+{hunk.stats.added}</span>
@@ -222,6 +239,28 @@
     background: #f0f0f0;
     padding: 0.2rem 0.4rem;
     border-radius: 3px;
+  }
+
+  .open-file-btn {
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #666;
+    transition: all 0.2s ease;
+    margin-left: 0.5rem;
+  }
+
+  .open-file-btn:hover {
+    background: #f0f0f0;
+    border-color: #999;
+    color: #333;
+  }
+
+  .open-file-btn:active {
+    background: #e0e0e0;
   }
 
   .file-stats {
@@ -344,6 +383,21 @@
     .hunk-location {
       background: #444;
       color: #ccc;
+    }
+
+    .open-file-btn {
+      border-color: #555;
+      color: #ccc;
+    }
+
+    .open-file-btn:hover {
+      background: #444;
+      border-color: #777;
+      color: #f6f6f6;
+    }
+
+    .open-file-btn:active {
+      background: #333;
     }
 
     .file-stats .size {

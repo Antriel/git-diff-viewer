@@ -37,6 +37,149 @@ pub struct TotalStats {
 }
 
 #[command]
+async fn open_file_in_editor(file_path: String, working_directory: String, line_number: Option<u32>) -> Result<(), String> {
+    // Normalize and construct absolute path
+    let absolute_path = if Path::new(&file_path).is_absolute() {
+        file_path.clone()
+    } else {
+        let working_path = Path::new(&working_directory);
+        let file_relative = Path::new(&file_path);
+        working_path.join(file_relative)
+            .to_str()
+            .ok_or("Invalid path encoding")?
+            .to_string()
+    };
+    
+    // Try to find an available editor across all platforms
+    let code_variants = if cfg!(target_os = "windows") {
+        vec!["code.cmd", "code.exe", "code"]
+    } else {
+        vec!["code"]
+    };
+    
+    let mut code_result = None;
+    let mut working_code_cmd = None;
+    
+    for variant in code_variants {
+        let result = Command::new(variant).arg("--version").output().await;
+        if result.is_ok() && result.as_ref().unwrap().status.success() {
+            code_result = Some(result.unwrap());
+            working_code_cmd = Some(variant);
+            break;
+        }
+    }
+    
+    // Also try using Windows cmd to resolve the path
+    if code_result.is_none() && cfg!(target_os = "windows") {
+        let cmd_result = Command::new("cmd")
+            .args(&["/c", "code", "--version"])
+            .output()
+            .await;
+        if cmd_result.is_ok() && cmd_result.as_ref().unwrap().status.success() {
+            code_result = Some(cmd_result.unwrap());
+            working_code_cmd = Some("cmd-code");
+        }
+    }
+    
+    let cmd = if let Some(_) = code_result {
+        working_code_cmd.unwrap_or("code")
+    } else {
+        let subl_result = Command::new("subl").arg("--version").output().await;
+        if subl_result.is_ok() && subl_result.unwrap().status.success() {
+            "subl"
+        } else {
+            let atom_result = Command::new("atom").arg("--version").output().await;
+            if atom_result.is_ok() && atom_result.unwrap().status.success() {
+                "atom"
+            } else if cfg!(target_os = "windows") {
+                let notepadpp_result = Command::new("notepad++").arg("--version").output().await;
+                if notepadpp_result.is_ok() && notepadpp_result.unwrap().status.success() {
+                    "notepad++"
+                } else {
+                    let notepad_result = Command::new("notepad").arg("/?").output().await;
+                    if notepad_result.is_ok() {
+                        "notepad"
+                    } else {
+                        return Err("No supported editor found. Please install VS Code, Sublime Text, or another supported editor.".to_string());
+                    }
+                }
+            } else {
+                return Err("No supported editor found (code, subl, or atom)".to_string());
+            }
+        }
+    };
+
+    let mut command = if cmd == "cmd-code" {
+        let mut c = Command::new("cmd");
+        c.arg("/c").arg("code");
+        c
+    } else {
+        Command::new(cmd)
+    };
+    
+    // Configure command arguments based on editor
+    match cmd {
+        cmd if cmd.starts_with("code") || cmd == "cmd-code" => {
+            if cmd != "cmd-code" {
+                command.arg("-r"); // Reuse existing window
+            } else {
+                command.arg("-r"); // This will be passed to the 'code' command
+            }
+            if let Some(line) = line_number {
+                command.arg("-g").arg(format!("{}:{}", absolute_path, line));
+            } else {
+                command.arg(&absolute_path);
+            }
+        },
+        "subl" => {
+            // Sublime Text
+            if let Some(line) = line_number {
+                command.arg(format!("{}:{}", absolute_path, line));
+            } else {
+                command.arg(&absolute_path);
+            }
+        },
+        "atom" => {
+            // Atom
+            if let Some(line) = line_number {
+                command.arg(format!("{}:{}", absolute_path, line));
+            } else {
+                command.arg(&absolute_path);
+            }
+        },
+        "notepad++" => {
+            // Notepad++
+            if let Some(line) = line_number {
+                command.arg("-n").arg(line.to_string()).arg(&absolute_path);
+            } else {
+                command.arg(&absolute_path);
+            }
+        },
+        "notepad" => {
+            // Basic notepad doesn't support line numbers
+            command.arg(&absolute_path);
+        },
+        _ => {
+            command.arg(&absolute_path);
+        }
+    }
+
+    let output = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute editor command: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Editor command failed: {}", stderr));
+    }
+
+    Ok(())
+}
+
+#[command]
 async fn get_git_diff(directory_path: String, context_lines: Option<u32>) -> Result<GitDiffResult, String> {
     // Check if it's a git repository
     let git_check = Command::new("git")
@@ -227,7 +370,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![get_git_diff])
+        .invoke_handler(tauri::generate_handler![get_git_diff, open_file_in_editor])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
