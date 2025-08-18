@@ -2,49 +2,64 @@
   import { invoke } from "@tauri-apps/api/core";
   import { onMount } from "svelte";
   import DiffViewer from "../lib/DiffViewer.svelte";
+  import DiffHeader from "../lib/DiffHeader.svelte";
   import DirectorySelector from "../lib/DirectorySelector.svelte";
 
   let currentDirectory = $state("");
+  /** @type {any} */
   let gitDiffResult = $state(null);
   let loading = $state(false);
   let error = $state("");
   let currentContextSize = $state(3);
+  let searchTerm = $state("");
+  let visibleCount = $state(0);
+  let totalCount = $state(0);
 
   async function loadGitDiff(directory, contextLines = null) {
     if (!directory) return;
-    
+
     // Use current context size if not explicitly provided
-    const actualContextLines = contextLines !== null ? contextLines : currentContextSize;
-    
+    const actualContextLines =
+      contextLines !== null ? contextLines : currentContextSize;
+
     loading = true;
     error = "";
-    
+
     try {
-      const result = await invoke("get_git_diff", { directoryPath: directory, contextLines: actualContextLines });
+      const result = await invoke("get_git_diff", {
+        directoryPath: directory,
+        contextLines: actualContextLines,
+      });
       gitDiffResult = result;
-      
+
       // Save to localStorage for project history
-      const savedProjects = JSON.parse(localStorage.getItem('gitDiffProjects') || '[]');
-      const existing = savedProjects.find(p => p.path === directory);
-      
+      const savedProjects = JSON.parse(
+        localStorage.getItem("gitDiffProjects") || "[]"
+      );
+      const existing = savedProjects.find((p) => p.path === directory);
+
       if (existing) {
         existing.lastOpened = new Date().toISOString();
       } else {
         savedProjects.unshift({
           path: directory,
           name: directory.split(/[/\\]/).pop() || directory,
-          lastOpened: new Date().toISOString()
+          lastOpened: new Date().toISOString(),
         });
       }
-      
+
       // Keep only the last 10 projects
       if (savedProjects.length > 10) {
         savedProjects.splice(10);
       }
-      
-      localStorage.setItem('gitDiffProjects', JSON.stringify(savedProjects));
+
+      localStorage.setItem("gitDiffProjects", JSON.stringify(savedProjects));
     } catch (err) {
-      error = err.toString();
+      if (err instanceof Error) {
+        error = err.message;
+      } else {
+        error = String(err);
+      }
       gitDiffResult = null;
     } finally {
       loading = false;
@@ -69,9 +84,20 @@
     }
   }
 
+  function handleSearch(event) {
+    searchTerm = event.detail.term;
+  }
+
+  function handleVisibleCountChange(event) {
+    visibleCount = event.detail.count;
+    totalCount = event.detail.total;
+  }
+
   onMount(() => {
     // Load the last opened project
-    const savedProjects = JSON.parse(localStorage.getItem('gitDiffProjects') || '[]');
+    const savedProjects = JSON.parse(
+      localStorage.getItem("gitDiffProjects") || "[]"
+    );
     if (savedProjects.length > 0) {
       const lastProject = savedProjects[0];
       currentDirectory = lastProject.path;
@@ -83,11 +109,24 @@
 <main class="container">
   <header>
     <h1>Git Diff Viewer</h1>
-    <DirectorySelector 
+    <DirectorySelector
       {currentDirectory}
       on:directorySelected={handleDirectorySelected}
     />
   </header>
+
+  {#if currentDirectory}
+    <DiffHeader
+      {gitDiffResult}
+      contextSize={currentContextSize}
+      {searchTerm}
+      {visibleCount}
+      totalCount={gitDiffResult?.hunks?.length || 0}
+      on:search={handleSearch}
+      on:refresh={handleRefresh}
+      on:contextChange={handleContextChange}
+    />
+  {/if}
 
   {#if loading}
     <div class="loading">
@@ -103,12 +142,10 @@
       {/if}
     </div>
   {:else if gitDiffResult}
-    <DiffViewer 
-      {gitDiffResult} 
-      {currentDirectory}
-      contextSize={currentContextSize}
-      on:refresh={handleRefresh}
-      on:contextChange={handleContextChange}
+    <DiffViewer
+      {gitDiffResult}
+      {searchTerm}
+      on:visibleCountChange={handleVisibleCountChange}
     />
   {:else if currentDirectory}
     <div class="no-changes">
@@ -119,14 +156,18 @@
   {:else}
     <div class="welcome">
       <h2>Welcome to Git Diff Viewer</h2>
-      <p>Select a git repository to view and search through your uncommitted changes.</p>
+      <p>
+        Select a git repository to view and search through your uncommitted
+        changes.
+      </p>
     </div>
   {/if}
 </main>
 
 <style>
   :global(body) {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+      "Liberation Mono", monospace;
     background: #f5f5f5;
     margin: 0;
     padding: 0;
@@ -172,8 +213,12 @@
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   .error {
@@ -257,12 +302,16 @@
       color: #f6f6f6;
     }
 
-    .welcome, .no-changes {
+    .welcome,
+    .no-changes {
       background: #2a2a2a;
       border-color: #444;
     }
 
-    .welcome h2, .welcome p, .no-changes h3, .no-changes p {
+    .welcome h2,
+    .welcome p,
+    .no-changes h3,
+    .no-changes p {
       color: #f6f6f6;
     }
 

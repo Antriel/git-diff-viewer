@@ -1,6 +1,6 @@
 <script>
-  import hljs from 'highlight.js';
-  
+  import hljs from "highlight.js";
+
   let { hunk, searchTerm = "", hunkIndex = 0 } = $props();
 
   let renderedLines = $state([]);
@@ -26,9 +26,9 @@
 
   function applySyntaxHighlighting(content, fileName) {
     // Get file extension for language detection
-    const ext = fileName.split('.').pop()?.toLowerCase();
+    const ext = fileName.split(".").pop()?.toLowerCase();
     const language = hljs.getLanguage(ext);
-    
+
     try {
       if (language) {
         const result = hljs.highlight(content, { language: ext });
@@ -39,7 +39,7 @@
         return result.value;
       }
     } catch (error) {
-      console.warn('Syntax highlighting failed:', error);
+      console.warn("Syntax highlighting failed:", error);
       return escapeHtml(content);
     }
   }
@@ -80,7 +80,7 @@
 
       // Apply syntax highlighting first
       let highlightedContent = applySyntaxHighlighting(content, hunk.file_name);
-      
+
       // Then apply search term highlighting if needed
       if ((isAdded || isRemoved) && searchTerm) {
         const escapedTerm = escapeHtml(searchTerm);
@@ -88,12 +88,17 @@
           `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
           "gi"
         );
-        highlightedContent = highlightedContent.replace(regex, '<mark class="highlight">$1</mark>');
+        highlightedContent = highlightedContent.replace(
+          regex,
+          '<mark class="highlight">$1</mark>'
+        );
       }
 
       // Mark as match if line contains search term
-      const isMatch = searchTerm && (isAdded || isRemoved) && 
-                     line.toLowerCase().includes(searchTerm.toLowerCase());
+      const isMatch =
+        searchTerm &&
+        (isAdded || isRemoved) &&
+        line.toLowerCase().includes(searchTerm.toLowerCase());
 
       result.push({
         oldNum,
@@ -106,7 +111,6 @@
 
     renderedLines = result;
   }
-
 
   function copyHunk() {
     const content = hunk.hunk_lines.join("\n");
@@ -159,8 +163,10 @@
 
 <style>
   /* Import highlight.js themes using CSS @import for better control */
-  @import 'highlight.js/styles/github.css' screen and (prefers-color-scheme: light);
-  @import 'highlight.js/styles/github-dark.css' screen and (prefers-color-scheme: dark);
+  @import "highlight.js/styles/github.css" screen and
+    (prefers-color-scheme: light);
+  @import "highlight.js/styles/github-dark.css" screen and
+    (prefers-color-scheme: dark);
   .hunk {
     border: 1px solid #ddd;
     margin: 1rem 0;
