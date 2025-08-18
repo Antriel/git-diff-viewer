@@ -207,8 +207,9 @@ fn get_file_stats(file_path: &str) -> (u64, String) {
                 .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
                 .map(|duration| {
                     let secs = duration.as_secs();
-                    chrono::DateTime::from_timestamp(secs as i64, 0)
-                        .map(|dt| dt.format("%Y-%m-%d").to_string())
+                    let nanos = duration.subsec_nanos();
+                    chrono::DateTime::from_timestamp(secs as i64, nanos)
+                        .map(|dt| dt.to_rfc3339())
                         .unwrap_or_else(|| "unknown".to_string())
                 })
                 .unwrap_or_else(|| "unknown".to_string());

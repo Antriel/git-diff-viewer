@@ -44,6 +44,38 @@
     }
   }
 
+  function formatRelativeTime(isoString) {
+    if (isoString === "unknown") return "unknown";
+    
+    const now = new Date();
+    const modifiedDate = new Date(isoString);
+    const diffMs = now - modifiedDate;
+    
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+    
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
+    
+    if (Math.abs(diffSeconds) < 60) return rtf.format(0, 'second');
+    if (Math.abs(diffMinutes) < 60) return rtf.format(-diffMinutes, 'minute');
+    if (Math.abs(diffHours) < 24) return rtf.format(-diffHours, 'hour');
+    if (Math.abs(diffDays) < 7) return rtf.format(-diffDays, 'day');
+    if (Math.abs(diffWeeks) < 4) return rtf.format(-diffWeeks, 'week');
+    if (Math.abs(diffMonths) < 12) return rtf.format(-diffMonths, 'month');
+    return rtf.format(-diffYears, 'year');
+  }
+
+  function formatLocalTime(isoString) {
+    if (isoString === "unknown") return "Unknown";
+    const date = new Date(isoString);
+    return date.toLocaleString();
+  }
+
   function renderHunk() {
     const lines = hunk.hunk_lines;
     const { oldStart, newStart } = parseHunkHeader(hunk.hunk_header);
@@ -128,6 +160,7 @@
       <span class="added">+{hunk.stats.added}</span>
       <span class="removed">-{hunk.stats.removed}</span>
       <span class="size">{(hunk.stats.size / 1024).toFixed(1)}KB</span>
+      <span class="modified" title={formatLocalTime(hunk.stats.modified)}>{formatRelativeTime(hunk.stats.modified)}</span>
     </div>
   </div>
 
@@ -210,6 +243,11 @@
 
   .file-stats .size {
     color: #666;
+  }
+
+  .file-stats .modified {
+    color: #666;
+    cursor: help;
   }
 
   .controls {
@@ -309,6 +347,10 @@
     }
 
     .file-stats .size {
+      color: #ccc;
+    }
+
+    .file-stats .modified {
       color: #ccc;
     }
 
