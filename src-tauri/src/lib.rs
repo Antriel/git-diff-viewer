@@ -104,7 +104,7 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
         };
     }
 
-    let file_regex = Regex::new(r"^diff --git").unwrap();
+    let file_regex = Regex::new(r"(?m)^diff --git").unwrap();
     let files: Vec<&str> = file_regex.split(diff_output).skip(1).collect();
 
     for file_block in files {
