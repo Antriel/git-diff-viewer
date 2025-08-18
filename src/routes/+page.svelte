@@ -1,156 +1,261 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
+  import { onMount } from "svelte";
+  import DiffViewer from "../lib/DiffViewer.svelte";
+  import DirectorySelector from "../lib/DirectorySelector.svelte";
 
-  let name = $state("");
-  let greetMsg = $state("");
+  let currentDirectory = $state("");
+  let gitDiffResult = $state(null);
+  let loading = $state(false);
+  let error = $state("");
 
-  async function greet(event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
+  async function loadGitDiff(directory) {
+    if (!directory) return;
+    
+    loading = true;
+    error = "";
+    
+    try {
+      const result = await invoke("get_git_diff", { directoryPath: directory });
+      gitDiffResult = result;
+      
+      // Save to localStorage for project history
+      const savedProjects = JSON.parse(localStorage.getItem('gitDiffProjects') || '[]');
+      const existing = savedProjects.find(p => p.path === directory);
+      
+      if (existing) {
+        existing.lastOpened = new Date().toISOString();
+      } else {
+        savedProjects.unshift({
+          path: directory,
+          name: directory.split(/[/\\]/).pop() || directory,
+          lastOpened: new Date().toISOString()
+        });
+      }
+      
+      // Keep only the last 10 projects
+      if (savedProjects.length > 10) {
+        savedProjects.splice(10);
+      }
+      
+      localStorage.setItem('gitDiffProjects', JSON.stringify(savedProjects));
+    } catch (err) {
+      error = err.toString();
+      gitDiffResult = null;
+    } finally {
+      loading = false;
+    }
   }
+
+  function handleDirectorySelected(event) {
+    currentDirectory = event.detail.directory;
+    loadGitDiff(currentDirectory);
+  }
+
+  function handleRefresh() {
+    if (currentDirectory) {
+      loadGitDiff(currentDirectory);
+    }
+  }
+
+  onMount(() => {
+    // Load the last opened project
+    const savedProjects = JSON.parse(localStorage.getItem('gitDiffProjects') || '[]');
+    if (savedProjects.length > 0) {
+      const lastProject = savedProjects[0];
+      currentDirectory = lastProject.path;
+      loadGitDiff(currentDirectory);
+    }
+  });
 </script>
 
 <main class="container">
-  <h1>Welcome to Tauri + Svelte</h1>
+  <header>
+    <h1>Git Diff Viewer</h1>
+    <DirectorySelector 
+      {currentDirectory}
+      on:directorySelected={handleDirectorySelected}
+    />
+  </header>
 
-  <div class="row">
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte-kit" alt="SvelteKit Logo" />
-    </a>
-  </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
-
-  <form class="row" onsubmit={greet}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{greetMsg}</p>
+  {#if loading}
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Loading git diff...</p>
+    </div>
+  {:else if error}
+    <div class="error">
+      <h3>Error</h3>
+      <p>{error}</p>
+      {#if currentDirectory}
+        <button onclick={handleRefresh}>Try Again</button>
+      {/if}
+    </div>
+  {:else if gitDiffResult}
+    <DiffViewer 
+      {gitDiffResult} 
+      {currentDirectory}
+      on:refresh={handleRefresh}
+    />
+  {:else if currentDirectory}
+    <div class="no-changes">
+      <h3>No Changes</h3>
+      <p>No uncommitted changes found in this repository.</p>
+      <button onclick={handleRefresh}>Refresh</button>
+    </div>
+  {:else}
+    <div class="welcome">
+      <h2>Welcome to Git Diff Viewer</h2>
+      <p>Select a git repository to view and search through your uncommitted changes.</p>
+    </div>
+  {/if}
 </main>
 
 <style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
-
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
+  :global(body) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
   }
 
-  a:hover {
-    color: #24c8db;
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
   }
 
-  input,
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  h1 {
+    margin: 0;
+    color: #333;
+    font-size: 1.8rem;
+  }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem;
+    gap: 1rem;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #333;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .error {
+    background: #ffe6e6;
+    border: 1px solid #ff6b6b;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .error h3 {
+    margin: 0 0 0.5rem 0;
+    color: #d63031;
+  }
+
+  .error p {
+    margin: 0 0 1rem 0;
+    color: #636e72;
+  }
+
+  .no-changes {
+    text-align: center;
+    padding: 3rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+  }
+
+  .no-changes h3 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+  }
+
+  .no-changes p {
+    margin: 0 0 1.5rem 0;
+    color: #666;
+  }
+
+  .welcome {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+  }
+
+  .welcome h2 {
+    margin: 0 0 1rem 0;
+    color: #333;
+  }
+
+  .welcome p {
+    margin: 0;
+    color: #666;
+    font-size: 1.1rem;
+  }
+
   button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
   }
-  button:active {
-    background-color: #0f0f0f69;
-  }
-}
 
+  button:hover {
+    background: #0052a3;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(body) {
+      background: #1a1a1a;
+      color: #f6f6f6;
+    }
+
+    h1 {
+      color: #f6f6f6;
+    }
+
+    .welcome, .no-changes {
+      background: #2a2a2a;
+      border-color: #444;
+    }
+
+    .welcome h2, .welcome p, .no-changes h3, .no-changes p {
+      color: #f6f6f6;
+    }
+
+    .error {
+      background: #3a1f1f;
+      border-color: #ff6b6b;
+    }
+  }
 </style>
