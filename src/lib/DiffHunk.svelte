@@ -15,30 +15,62 @@
 
   function highlightSearchTerm(text, term) {
     if (!term) return escapeHtml(text);
-    
+
     const escaped = escapeHtml(text);
     const escapedTerm = escapeHtml(term);
-    const regex = new RegExp(`(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const regex = new RegExp(
+      `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi"
+    );
     return escaped.replace(regex, '<mark class="highlight">$1</mark>');
   }
 
   function parseHunkHeader(header) {
     const match = header.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-    return match ? {
-      oldStart: parseInt(match[1], 10),
-      newStart: parseInt(match[2], 10)
-    } : { oldStart: 1, newStart: 1 };
+    return match
+      ? {
+          oldStart: parseInt(match[1], 10),
+          newStart: parseInt(match[2], 10),
+        }
+      : { oldStart: 1, newStart: 1 };
   }
 
   function getLanguageFromExtension(ext) {
     const langMap = {
-      js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
-      json: 'json', py: 'python', rb: 'ruby', java: 'java', go: 'go',
-      rs: 'rust', php: 'php', cs: 'csharp', c: 'c', h: 'c',
-      cpp: 'cpp', cc: 'cpp', cxx: 'cpp', hpp: 'cpp', hh: 'cpp', hxx: 'cpp',
-      swift: 'swift', kt: 'kotlin', kts: 'kotlin', sh: 'bash', bash: 'bash',
-      yml: 'yaml', yaml: 'yaml', md: 'markdown', html: 'xml', htm: 'xml',
-      css: 'css', sql: 'sql', scala: 'scala', toml: 'toml'
+      js: "javascript",
+      jsx: "javascript",
+      ts: "typescript",
+      tsx: "typescript",
+      json: "json",
+      py: "python",
+      rb: "ruby",
+      java: "java",
+      go: "go",
+      rs: "rust",
+      php: "php",
+      cs: "csharp",
+      c: "c",
+      h: "c",
+      cpp: "cpp",
+      cc: "cpp",
+      cxx: "cpp",
+      hpp: "cpp",
+      hh: "cpp",
+      hxx: "cpp",
+      swift: "swift",
+      kt: "kotlin",
+      kts: "kotlin",
+      sh: "bash",
+      bash: "bash",
+      yml: "yaml",
+      yaml: "yaml",
+      md: "markdown",
+      html: "xml",
+      htm: "xml",
+      css: "css",
+      sql: "sql",
+      scala: "scala",
+      toml: "toml",
     };
     return langMap[ext?.toLowerCase()] || null;
   }
@@ -46,15 +78,18 @@
   function renderHunk() {
     const lines = hunk.hunk_lines;
     const { oldStart, newStart } = parseHunkHeader(hunk.hunk_header);
-    
+
     // Find matching lines if searching
     const searchLower = searchTerm.toLowerCase();
     const matchingIndices = [];
-    
+
     if (searchTerm) {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if ((line.startsWith('+') || line.startsWith('-')) && line.toLowerCase().includes(searchLower)) {
+        if (
+          (line.startsWith("+") || line.startsWith("-")) &&
+          line.toLowerCase().includes(searchLower)
+        ) {
           matchingIndices.push(i);
         }
       }
@@ -63,7 +98,7 @@
     // Determine visible range
     let start = 0;
     let end = lines.length;
-    
+
     if (searchTerm && matchingIndices.length > 0) {
       const minMatch = Math.min(...matchingIndices);
       const maxMatch = Math.max(...matchingIndices);
@@ -73,29 +108,29 @@
 
     const visibleLines = lines.slice(start, end);
     const result = [];
-    
+
     let oldLineNum = oldStart;
     let newLineNum = newStart;
-    
+
     // Adjust line numbers for lines before our slice
     for (let i = 0; i < start; i++) {
       const prefix = lines[i][0];
-      if (prefix === ' ' || prefix === '-') oldLineNum++;
-      if (prefix === ' ' || prefix === '+') newLineNum++;
+      if (prefix === " " || prefix === "-") oldLineNum++;
+      if (prefix === " " || prefix === "+") newLineNum++;
     }
 
     for (let i = 0; i < visibleLines.length; i++) {
       const line = visibleLines[i];
       const prefix = line[0];
       const content = line.slice(1);
-      
-      const isAdded = prefix === '+';
-      const isRemoved = prefix === '-';
-      const isContext = prefix === ' ';
-      
+
+      const isAdded = prefix === "+";
+      const isRemoved = prefix === "-";
+      const isContext = prefix === " ";
+
       let oldNum = 0;
       let newNum = 0;
-      
+
       if (isContext) {
         oldNum = oldLineNum++;
         newNum = newLineNum++;
@@ -104,25 +139,26 @@
       } else if (isRemoved) {
         oldNum = oldLineNum++;
       }
-      
+
       const cssClasses = [];
-      if (isContext) cssClasses.push('context');
-      if (isAdded) cssClasses.push('added');
-      if (isRemoved) cssClasses.push('removed');
-      
-      const highlightedContent = (isAdded || isRemoved) ? 
-        highlightSearchTerm(content, searchTerm) : 
-        escapeHtml(content);
-      
+      if (isContext) cssClasses.push("context");
+      if (isAdded) cssClasses.push("added");
+      if (isRemoved) cssClasses.push("removed");
+
+      const highlightedContent =
+        isAdded || isRemoved
+          ? highlightSearchTerm(content, searchTerm)
+          : escapeHtml(content);
+
       result.push({
         oldNum,
         newNum,
         content: highlightedContent,
         cssClasses,
-        isMatch: matchingIndices.includes(start + i)
+        isMatch: matchingIndices.includes(start + i),
       });
     }
-    
+
     renderedLines = result;
   }
 
@@ -132,13 +168,16 @@
   }
 
   function copyHunk() {
-    const content = hunk.hunk_lines.join('\n');
-    navigator.clipboard.writeText(content).then(() => {
-      // Simple visual feedback could be added here
-      console.log('Copied hunk to clipboard');
-    }).catch(err => {
-      console.error('Failed to copy:', err);
-    });
+    const content = hunk.hunk_lines.join("\n");
+    navigator.clipboard
+      .writeText(content)
+      .then(() => {
+        // Simple visual feedback could be added here
+        console.log("Copied hunk to clipboard");
+      })
+      .catch((err) => {
+        console.error("Failed to copy:", err);
+      });
   }
 
   // Re-render when hunk or search term changes
@@ -159,22 +198,27 @@
       <span class="size">{(hunk.stats.size / 1024).toFixed(1)}KB</span>
     </div>
   </div>
-  
+
   <div class="controls">
     <span>Context:</span>
-    <button onclick={() => adjustContext(-1)} disabled={contextSize === 0}>-</button>
+    <button onclick={() => adjustContext(-1)} disabled={contextSize === 0}
+      >-</button
+    >
     <span class="context-size">{contextSize}</span>
     <button onclick={() => adjustContext(1)}>+</button>
     <button onclick={copyHunk} title="Copy hunk" class="copy-btn">📋</button>
   </div>
-  
+
   <div class="code-container">
-    <pre class="code"><code>{#each renderedLines as line}
-<div class="code-line {line.cssClasses.join(' ')}" class:match={line.isMatch}>
-  <span class="line-num old">{line.oldNum}</span>
-  <span class="line-num new">{line.newNum}</span>
-  <span class="line-content">{@html line.content}</span>
-</div>{/each}</code></pre>
+    <pre class="code"><code
+        >{#each renderedLines as line}<div
+            class="code-line {line.cssClasses.join(' ')}"
+            class:match={line.isMatch}><span class="line-num old"
+              >{line.oldNum}</span
+            ><span class="line-num new">{line.newNum}</span><span
+              class="line-content">{@html line.content}</span
+            ></div>{/each}</code
+      ></pre>
   </div>
 </div>
 
@@ -289,15 +333,16 @@
   .code {
     margin: 0;
     padding: 0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+      "Liberation Mono", monospace;
     font-size: 0.85rem;
     line-height: 1.4;
   }
 
   .code-line {
     display: flex;
-    align-items: flex-start;
-    min-height: 1.4em;
+    align-items: center;
+    line-height: 1;
   }
 
   .line-num {

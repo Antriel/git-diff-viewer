@@ -12,21 +12,21 @@
   // Use derived state to automatically compute filtered hunks
   let filteredHunks = $derived.by(() => {
     if (!gitDiffResult?.hunks) return [];
-    
+
     if (!searchTerm.trim()) {
       return gitDiffResult.hunks;
     }
 
     const searchLower = searchTerm.toLowerCase();
-    return gitDiffResult.hunks.filter(hunk => {
+    return gitDiffResult.hunks.filter((hunk) => {
       // Search in file name
       if (hunk.file_name.toLowerCase().includes(searchLower)) {
         return true;
       }
-      
+
       // Search in hunk lines (only added/removed lines)
-      return hunk.hunk_lines.some(line => {
-        if (line.startsWith('+') || line.startsWith('-')) {
+      return hunk.hunk_lines.some((line) => {
+        if (line.startsWith("+") || line.startsWith("-")) {
           return line.toLowerCase().includes(searchLower);
         }
         return false;
@@ -52,9 +52,9 @@
       <span class="added">+{gitDiffResult.total_stats.added}</span>,
       <span class="removed">-{gitDiffResult.total_stats.removed}</span>
     </div>
-    
+
     <div class="toolbar">
-      <SearchBar 
+      <SearchBar
         {searchTerm}
         resultsCount={visibleCount}
         totalCount={gitDiffResult.hunks.length}
@@ -79,11 +79,7 @@
   {:else}
     <div class="hunks-container">
       {#each filteredHunks as hunk, index}
-        <DiffHunk 
-          {hunk} 
-          {searchTerm}
-          hunkIndex={index}
-        />
+        <DiffHunk {hunk} {searchTerm} hunkIndex={index} />
       {/each}
     </div>
   {/if}
@@ -139,18 +135,21 @@
     background: #e9ecef;
   }
 
-  .no-results, .no-hunks {
+  .no-results,
+  .no-hunks {
     text-align: center;
     padding: 3rem;
     color: #666;
   }
 
-  .no-results h3, .no-hunks h3 {
+  .no-results h3,
+  .no-hunks h3 {
     margin: 0 0 0.5rem 0;
     color: #333;
   }
 
-  .no-results p, .no-hunks p {
+  .no-results p,
+  .no-hunks p {
     margin: 0;
   }
 
@@ -183,11 +182,13 @@
       background: #555;
     }
 
-    .no-results, .no-hunks {
+    .no-results,
+    .no-hunks {
       color: #ccc;
     }
 
-    .no-results h3, .no-hunks h3 {
+    .no-results h3,
+    .no-hunks h3 {
       color: #f6f6f6;
     }
   }

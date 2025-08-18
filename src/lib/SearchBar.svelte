@@ -59,12 +59,16 @@
       class="search-input"
     />
     {#if searchTerm}
-      <button onclick={clearSearch} class="clear-btn" title="Clear search (Esc)">
+      <button
+        onclick={clearSearch}
+        class="clear-btn"
+        title="Clear search (Esc)"
+      >
         ✕
       </button>
     {/if}
   </div>
-  
+
   <div class="search-results">
     {#if searchTerm}
       <span class="results-count">
@@ -76,7 +80,7 @@
       </span>
     {/if}
   </div>
-  
+
   <div class="shortcuts">
     <span class="kbd">Ctrl+F</span> focus search •
     <span class="kbd">Esc</span> clear

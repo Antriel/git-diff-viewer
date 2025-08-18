@@ -14,9 +14,9 @@
       const selected = await open({
         directory: true,
         multiple: false,
-        title: "Select Git Repository Directory"
+        title: "Select Git Repository Directory",
       });
-      
+
       if (selected) {
         dispatch("directorySelected", { directory: selected });
       }
@@ -26,7 +26,7 @@
   }
 
   function loadRecentProjects() {
-    const saved = JSON.parse(localStorage.getItem('gitDiffProjects') || '[]');
+    const saved = JSON.parse(localStorage.getItem("gitDiffProjects") || "[]");
     recentProjects = saved.slice(0, 5); // Show only the 5 most recent
   }
 
@@ -58,27 +58,27 @@
   <div class="current-path">
     {#if currentDirectory}
       <span class="path-label">Current:</span>
-      <span class="path" title={currentDirectory}>{formatPath(currentDirectory)}</span>
+      <span class="path" title={currentDirectory}
+        >{formatPath(currentDirectory)}</span
+      >
     {:else}
       <span class="no-path">No directory selected</span>
     {/if}
   </div>
-  
+
   <div class="controls">
     <button onclick={selectDirectory} class="primary">
       Select Directory
     </button>
-    
+
     {#if recentProjects.length > 0}
       <div class="recent-dropdown">
-        <button onclick={toggleRecent} class="secondary">
-          Recent ▼
-        </button>
-        
+        <button onclick={toggleRecent} class="secondary"> Recent ▼ </button>
+
         {#if showRecent}
           <div class="dropdown-menu">
             {#each recentProjects as project}
-              <button 
+              <button
                 onclick={() => selectRecentProject(project)}
                 class="recent-item"
                 title={project.path}
