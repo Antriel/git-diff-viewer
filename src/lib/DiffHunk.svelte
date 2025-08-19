@@ -365,7 +365,18 @@
   }
 
   .code-line.match {
-    box-shadow: inset 3px 0 0 #ffd700;
+    position: relative;
+  }
+
+  .code-line.match::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #ffd700;
+    z-index: 1;
   }
 
   :global(.highlight) {
