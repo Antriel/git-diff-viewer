@@ -1,3 +1,4 @@
+use chrono::DateTime;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -50,6 +51,130 @@ pub struct GitRefs {
     recent_commits: Vec<GitRef>,
 }
 
+async fn check_editor_available(cmd: &str, args: &[&str]) -> bool {
+    Command::new(cmd)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
+async fn find_available_editor() -> Result<&'static str, String> {
+    // Try VSCode variants first
+    let code_variants = if cfg!(target_os = "windows") {
+        vec!["code.cmd", "code.exe", "code"]
+    } else {
+        vec!["code"]
+    };
+
+    for variant in code_variants {
+        if check_editor_available(variant, &["--version"]).await {
+            return Ok(variant);
+        }
+    }
+
+    // Try cmd approach on Windows
+    if cfg!(target_os = "windows")
+        && check_editor_available("cmd", &["/c", "code", "--version"]).await
+    {
+        return Ok("cmd-code");
+    }
+
+    // Try other editors
+    if check_editor_available("subl", &["--version"]).await {
+        return Ok("subl");
+    }
+
+    if check_editor_available("atom", &["--version"]).await {
+        return Ok("atom");
+    }
+
+    if cfg!(target_os = "windows") {
+        if check_editor_available("notepad++", &["--version"]).await {
+            return Ok("notepad++");
+        }
+        if check_editor_available("notepad", &["/?"]).await {
+            return Ok("notepad");
+        }
+    }
+
+    Err("No supported editor found. Please install VS Code, Sublime Text, or another supported editor.".to_string())
+}
+
+fn build_editor_command(editor: &str, file_path: &str, line_number: Option<u32>) -> Command {
+    let mut command = if editor == "cmd-code" {
+        let mut c = Command::new("cmd");
+        c.arg("/c").arg("code").arg("-r");
+        c
+    } else {
+        Command::new(editor)
+    };
+
+    match editor {
+        "code" | "code.cmd" | "code.exe" | "cmd-code" => {
+            if editor != "cmd-code" {
+                command.arg("-r");
+            }
+            if let Some(line) = line_number {
+                command.arg("-g").arg(format!("{}:{}", file_path, line));
+            } else {
+                command.arg(file_path);
+            }
+        }
+        "subl" | "atom" => {
+            if let Some(line) = line_number {
+                command.arg(format!("{}:{}", file_path, line));
+            } else {
+                command.arg(file_path);
+            }
+        }
+        "notepad++" => {
+            if let Some(line) = line_number {
+                command.arg("-n").arg(line.to_string()).arg(file_path);
+            } else {
+                command.arg(file_path);
+            }
+        }
+        _ => {
+            command.arg(file_path);
+        }
+    }
+
+    command
+}
+
+async fn run_git_command(args: &[&str], directory: &str) -> Result<String, String> {
+    let output = Command::new("git")
+        .args(args)
+        .current_dir(directory)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Git command failed: {}", stderr));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+async fn check_git_repo(directory: &str) -> Result<(), String> {
+    run_git_command(&["rev-parse", "--git-dir"], directory)
+        .await
+        .map_err(|_| "Not a git repository or git not found".to_string())
+        .map(|_| ())
+}
+
+async fn run_git_command_optional(args: &[&str], directory: &str) -> Option<String> {
+    run_git_command(args, directory).await.ok()
+}
+
 #[command]
 async fn open_file_in_editor(
     file_path: String,
@@ -58,130 +183,17 @@ async fn open_file_in_editor(
 ) -> Result<(), String> {
     // Normalize and construct absolute path
     let absolute_path = if Path::new(&file_path).is_absolute() {
-        file_path.clone()
+        file_path
     } else {
-        let working_path = Path::new(&working_directory);
-        let file_relative = Path::new(&file_path);
-        working_path
-            .join(file_relative)
+        Path::new(&working_directory)
+            .join(&file_path)
             .to_str()
             .ok_or("Invalid path encoding")?
             .to_string()
     };
 
-    // Try to find an available editor across all platforms
-    let code_variants = if cfg!(target_os = "windows") {
-        vec!["code.cmd", "code.exe", "code"]
-    } else {
-        vec!["code"]
-    };
-
-    let mut code_result = None;
-    let mut working_code_cmd = None;
-
-    for variant in code_variants {
-        let result = Command::new(variant).arg("--version").output().await;
-        if result.is_ok() && result.as_ref().unwrap().status.success() {
-            code_result = Some(result.unwrap());
-            working_code_cmd = Some(variant);
-            break;
-        }
-    }
-
-    // Also try using Windows cmd to resolve the path
-    if code_result.is_none() && cfg!(target_os = "windows") {
-        let cmd_result = Command::new("cmd")
-            .args(&["/c", "code", "--version"])
-            .output()
-            .await;
-        if cmd_result.is_ok() && cmd_result.as_ref().unwrap().status.success() {
-            code_result = Some(cmd_result.unwrap());
-            working_code_cmd = Some("cmd-code");
-        }
-    }
-
-    let cmd = if let Some(_) = code_result {
-        working_code_cmd.unwrap_or("code")
-    } else {
-        let subl_result = Command::new("subl").arg("--version").output().await;
-        if subl_result.is_ok() && subl_result.unwrap().status.success() {
-            "subl"
-        } else {
-            let atom_result = Command::new("atom").arg("--version").output().await;
-            if atom_result.is_ok() && atom_result.unwrap().status.success() {
-                "atom"
-            } else if cfg!(target_os = "windows") {
-                let notepadpp_result = Command::new("notepad++").arg("--version").output().await;
-                if notepadpp_result.is_ok() && notepadpp_result.unwrap().status.success() {
-                    "notepad++"
-                } else {
-                    let notepad_result = Command::new("notepad").arg("/?").output().await;
-                    if notepad_result.is_ok() {
-                        "notepad"
-                    } else {
-                        return Err("No supported editor found. Please install VS Code, Sublime Text, or another supported editor.".to_string());
-                    }
-                }
-            } else {
-                return Err("No supported editor found (code, subl, or atom)".to_string());
-            }
-        }
-    };
-
-    let mut command = if cmd == "cmd-code" {
-        let mut c = Command::new("cmd");
-        c.arg("/c").arg("code");
-        c
-    } else {
-        Command::new(cmd)
-    };
-
-    // Configure command arguments based on editor
-    match cmd {
-        cmd if cmd.starts_with("code") || cmd == "cmd-code" => {
-            if cmd != "cmd-code" {
-                command.arg("-r"); // Reuse existing window
-            } else {
-                command.arg("-r"); // This will be passed to the 'code' command
-            }
-            if let Some(line) = line_number {
-                command.arg("-g").arg(format!("{}:{}", absolute_path, line));
-            } else {
-                command.arg(&absolute_path);
-            }
-        }
-        "subl" => {
-            // Sublime Text
-            if let Some(line) = line_number {
-                command.arg(format!("{}:{}", absolute_path, line));
-            } else {
-                command.arg(&absolute_path);
-            }
-        }
-        "atom" => {
-            // Atom
-            if let Some(line) = line_number {
-                command.arg(format!("{}:{}", absolute_path, line));
-            } else {
-                command.arg(&absolute_path);
-            }
-        }
-        "notepad++" => {
-            // Notepad++
-            if let Some(line) = line_number {
-                command.arg("-n").arg(line.to_string()).arg(&absolute_path);
-            } else {
-                command.arg(&absolute_path);
-            }
-        }
-        "notepad" => {
-            // Basic notepad doesn't support line numbers
-            command.arg(&absolute_path);
-        }
-        _ => {
-            command.arg(&absolute_path);
-        }
-    }
+    let editor = find_available_editor().await?;
+    let mut command = build_editor_command(editor, &absolute_path, line_number);
 
     let output = command
         .stdout(Stdio::piped())
@@ -200,19 +212,7 @@ async fn open_file_in_editor(
 
 #[command]
 async fn get_git_refs(directory_path: String) -> Result<GitRefs, String> {
-    // Check if it's a git repository
-    let git_check = Command::new("git")
-        .args(&["rev-parse", "--git-dir"])
-        .current_dir(&directory_path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to execute git command: {}", e))?;
-
-    if !git_check.status.success() {
-        return Err("Not a git repository or git not found".to_string());
-    }
+    check_git_repo(&directory_path).await?;
 
     let mut git_refs = GitRefs {
         branches: Vec::new(),
@@ -220,17 +220,12 @@ async fn get_git_refs(directory_path: String) -> Result<GitRefs, String> {
     };
 
     // Get branches
-    let branch_output = Command::new("git")
-        .args(&["branch", "-a", "--format=%(refname:short)"])
-        .current_dir(&directory_path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to get branches: {}", e))?;
-
-    if branch_output.status.success() {
-        let branch_text = String::from_utf8_lossy(&branch_output.stdout);
+    if let Ok(branch_text) = run_git_command(
+        &["branch", "-a", "--format=%(refname:short)"],
+        &directory_path,
+    )
+    .await
+    {
         for line in branch_text.lines() {
             let branch_name = line.trim();
             if !branch_name.is_empty() && !branch_name.starts_with("origin/HEAD") {
@@ -245,17 +240,12 @@ async fn get_git_refs(directory_path: String) -> Result<GitRefs, String> {
     }
 
     // Get recent commits
-    let commit_output = Command::new("git")
-        .args(&["log", "--oneline", "-20", "--pretty=format:%h|%s"])
-        .current_dir(&directory_path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to get recent commits: {}", e))?;
-
-    if commit_output.status.success() {
-        let commit_text = String::from_utf8_lossy(&commit_output.stdout);
+    if let Ok(commit_text) = run_git_command(
+        &["log", "--oneline", "-20", "--pretty=format:%h|%s"],
+        &directory_path,
+    )
+    .await
+    {
         for line in commit_text.lines() {
             let parts: Vec<&str> = line.splitn(2, '|').collect();
             if parts.len() == 2 {
@@ -280,112 +270,89 @@ async fn get_git_diff(
     comparison_source: Option<String>, // "working" or "staged"
     comparison_target: Option<String>, // target ref (HEAD, branch, commit)
 ) -> Result<GitDiffResult, String> {
-    // Check if it's a git repository
-    let git_check = Command::new("git")
-        .args(&["rev-parse", "--git-dir"])
-        .current_dir(&directory_path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to execute git command: {}", e))?;
-
-    if !git_check.status.success() {
-        return Err("Not a git repository or git not found".to_string());
-    }
+    check_git_repo(&directory_path).await?;
 
     // Get git diff with source/target model
     let context_arg = format!("-U{}", context_lines.unwrap_or(3));
-    let mut diff_args = vec!["diff".to_string(), context_arg.clone()];
 
     // Determine what to compare based on source and target
     let source = comparison_source.as_deref().unwrap_or("working");
     let target = comparison_target.as_deref().unwrap_or("HEAD");
 
-    match source {
+    // Prepare owned strings for ranges to avoid borrowing issues
+    let range = match source {
+        "staged" | "working" => String::new(),
+        _ => {
+            if source == target {
+                format!("{}..HEAD", source)
+            } else {
+                format!("{}..{}", source, target)
+            }
+        }
+    };
+
+    let diff_args = match source {
         "staged" => {
             // Compare staged files against target
-            diff_args.push("--staged".to_string());
             if target != "HEAD" {
-                diff_args.push(target.to_string());
+                vec!["diff", &context_arg, "--staged", target]
+            } else {
+                vec!["diff", &context_arg, "--staged"]
             }
         }
         "working" => {
             // Compare working directory against target
-            diff_args.push(target.to_string());
+            vec!["diff", &context_arg, target]
         }
         _ => {
             // Source is a commit/branch, compare it against target (commit-to-commit)
-            if source == target {
-                // Same source and target would result in no diff, so compare source against HEAD
-                diff_args.push(format!("{}..HEAD", source));
-            } else {
-                diff_args.push(format!("{}..{}", source, target));
-            }
+            vec!["diff", &context_arg, &range]
         }
-    }
+    };
 
-    let diff_output = Command::new("git")
-        .args(&diff_args.iter().map(|s| s.as_str()).collect::<Vec<_>>())
-        .current_dir(&directory_path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .await
-        .map_err(|e| format!("Failed to execute git diff: {}", e))?;
-
-    if !diff_output.status.success() {
-        let stderr = String::from_utf8_lossy(&diff_output.stderr);
-        return Err(format!("Git diff failed: {}", stderr));
-    }
-
-    let diff_text = String::from_utf8_lossy(&diff_output.stdout);
-    let mut all_diff_text = diff_text.to_string();
+    let mut all_diff_text = run_git_command(&diff_args, &directory_path).await?;
 
     // Handle untracked files if requested
     if include_untracked.unwrap_or(false) {
-        let untracked_output = Command::new("git")
-            .args(&["ls-files", "--others", "--exclude-standard"])
-            .current_dir(&directory_path)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .await
-            .map_err(|e| format!("Failed to get untracked files: {}", e))?;
+        if let Some(untracked_files) = run_git_command_optional(
+            &["ls-files", "--others", "--exclude-standard"],
+            &directory_path,
+        )
+        .await
+        {
+            for untracked_file in untracked_files.lines() {
+                if !untracked_file.trim().is_empty() {
+                    let null_device = if cfg!(target_os = "windows") {
+                        "NUL"
+                    } else {
+                        "/dev/null"
+                    };
 
-        let untracked_files = String::from_utf8_lossy(&untracked_output.stdout);
+                    // git diff --no-index returns exit code 1 when files differ, which is expected
+                    // So we need to handle this manually instead of using run_git_command_optional
+                    let untracked_diff = Command::new("git")
+                        .args(&[
+                            "diff",
+                            "--no-index",
+                            &context_arg,
+                            null_device,
+                            untracked_file,
+                        ])
+                        .current_dir(&directory_path)
+                        .stdout(Stdio::piped())
+                        .stderr(Stdio::piped())
+                        .output()
+                        .await;
 
-        for untracked_file in untracked_files.lines() {
-            if !untracked_file.trim().is_empty() {
-                // Get diff for untracked file using git diff --no-index NUL filepath
-                let null_device = if cfg!(target_os = "windows") {
-                    "NUL"
-                } else {
-                    "/dev/null"
-                };
-                let untracked_diff = Command::new("git")
-                    .args(&[
-                        "diff",
-                        "--no-index",
-                        &context_arg,
-                        null_device,
-                        untracked_file,
-                    ])
-                    .current_dir(&directory_path)
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped())
-                    .output()
-                    .await
-                    .map_err(|e| {
-                        format!("Failed to diff untracked file {}: {}", untracked_file, e)
-                    })?;
-
-                let untracked_diff_text = String::from_utf8_lossy(&untracked_diff.stdout);
-                if !untracked_diff_text.trim().is_empty() {
-                    if !all_diff_text.trim().is_empty() {
-                        all_diff_text.push('\n');
+                    if let Ok(output) = untracked_diff {
+                        let untracked_diff_text = String::from_utf8_lossy(&output.stdout);
+                        if !untracked_diff_text.trim().is_empty() {
+                            if !all_diff_text.trim().is_empty() {
+                                all_diff_text.push('\n');
+                            }
+                            all_diff_text.push_str(&untracked_diff_text);
+                        }
                     }
-                    all_diff_text.push_str(&untracked_diff_text);
                 }
             }
         }
@@ -393,18 +360,12 @@ async fn get_git_diff(
 
     if all_diff_text.trim().is_empty() && source == "working" && target == "HEAD" {
         // Only check for staged changes when doing default comparison (working vs HEAD)
-        let staged_output = Command::new("git")
-            .args(&["diff", &context_arg, "--cached"])
-            .current_dir(&directory_path)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .output()
-            .await
-            .map_err(|e| format!("Failed to check staged changes: {}", e))?;
-
-        let staged_text = String::from_utf8_lossy(&staged_output.stdout);
-        if !staged_text.trim().is_empty() {
-            return Ok(parse_diff_to_hunks(&staged_text, &directory_path));
+        if let Ok(staged_text) =
+            run_git_command(&["diff", &context_arg, "--cached"], &directory_path).await
+        {
+            if !staged_text.trim().is_empty() {
+                return Ok(parse_diff_to_hunks(&staged_text, &directory_path));
+            }
         }
 
         return Ok(GitDiffResult {
@@ -539,14 +500,13 @@ fn get_file_stats(file_path: &str) -> (u64, String) {
             let modified = metadata
                 .modified()
                 .ok()
-                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-                .map(|duration| {
-                    let secs = duration.as_secs();
-                    let nanos = duration.subsec_nanos();
-                    chrono::DateTime::from_timestamp(secs as i64, nanos)
-                        .map(|dt| dt.to_rfc3339())
-                        .unwrap_or_else(|| "unknown".to_string())
+                .and_then(|time| {
+                    DateTime::from_timestamp(
+                        time.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs() as i64,
+                        0,
+                    )
                 })
+                .map(|dt| dt.to_rfc3339())
                 .unwrap_or_else(|| "unknown".to_string());
             (size, modified)
         }
