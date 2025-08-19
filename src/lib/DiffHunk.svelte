@@ -2,7 +2,12 @@
   import hljs from "highlight.js";
   import { invoke } from "@tauri-apps/api/core";
 
-  let { hunk, searchTerm = "", currentDirectory = "", hunkIndex = 0 } = $props();
+  let {
+    hunk,
+    searchTerm = "",
+    currentDirectory = "",
+    hunkIndex = 0,
+  } = $props();
 
   let renderedLines = $state([]);
 
@@ -28,11 +33,11 @@
   async function openFileInEditor() {
     try {
       const { newStart } = parseHunkHeader(hunk.hunk_header);
-      
+
       await invoke("open_file_in_editor", {
         filePath: hunk.file_name,
         workingDirectory: currentDirectory,
-        lineNumber: newStart
+        lineNumber: newStart,
       });
     } catch (error) {
       console.error("Failed to open file in editor:", error);
@@ -62,13 +67,13 @@
 
   function formatRelativeTime(isoString) {
     if (isoString === "unknown") return "unknown";
-    
+
     const now = new Date();
     const modifiedDate = new Date(isoString);
     const diffMs = now.getTime() - modifiedDate.getTime();
-    
-    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-    
+
+    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
     const diffSeconds = Math.floor(diffMs / 1000);
     const diffMinutes = Math.floor(diffSeconds / 60);
     const diffHours = Math.floor(diffMinutes / 60);
@@ -76,14 +81,14 @@
     const diffWeeks = Math.floor(diffDays / 7);
     const diffMonths = Math.floor(diffDays / 30);
     const diffYears = Math.floor(diffDays / 365);
-    
-    if (Math.abs(diffSeconds) < 60) return rtf.format(0, 'second');
-    if (Math.abs(diffMinutes) < 60) return rtf.format(-diffMinutes, 'minute');
-    if (Math.abs(diffHours) < 24) return rtf.format(-diffHours, 'hour');
-    if (Math.abs(diffDays) < 7) return rtf.format(-diffDays, 'day');
-    if (Math.abs(diffWeeks) < 4) return rtf.format(-diffWeeks, 'week');
-    if (Math.abs(diffMonths) < 12) return rtf.format(-diffMonths, 'month');
-    return rtf.format(-diffYears, 'year');
+
+    if (Math.abs(diffSeconds) < 60) return rtf.format(0, "second");
+    if (Math.abs(diffMinutes) < 60) return rtf.format(-diffMinutes, "minute");
+    if (Math.abs(diffHours) < 24) return rtf.format(-diffHours, "hour");
+    if (Math.abs(diffDays) < 7) return rtf.format(-diffDays, "day");
+    if (Math.abs(diffWeeks) < 4) return rtf.format(-diffWeeks, "week");
+    if (Math.abs(diffMonths) < 12) return rtf.format(-diffMonths, "month");
+    return rtf.format(-diffYears, "year");
   }
 
   function formatLocalTime(isoString) {
@@ -109,8 +114,8 @@
       const isRemoved = prefix === "-";
       const isContext = prefix === " ";
 
-      let oldNum = ' ';
-      let newNum = ' ';
+      let oldNum = " ";
+      let newNum = " ";
 
       if (isContext) {
         oldNum = String(oldLineNum++);
@@ -171,13 +176,19 @@
     <div class="file-info">
       <strong class="file-name">{hunk.file_name}</strong>
       <span class="hunk-location">{hunk.hunk_header}</span>
-      <button class="open-file-btn" onclick={openFileInEditor} title="Open file in editor">📂</button>
+      <button
+        class="open-file-btn"
+        onclick={openFileInEditor}
+        title="Open file in editor">📂</button
+      >
     </div>
     <div class="file-stats">
       <span class="added">+{hunk.stats.added}</span>
       <span class="removed">-{hunk.stats.removed}</span>
       <span class="size">{(hunk.stats.size / 1024).toFixed(1)}KB</span>
-      <span class="modified" title={formatLocalTime(hunk.stats.modified)}>{formatRelativeTime(hunk.stats.modified)}</span>
+      <span class="modified" title={formatLocalTime(hunk.stats.modified)}
+        >{formatRelativeTime(hunk.stats.modified)}</span
+      >
     </div>
   </div>
 

@@ -37,29 +37,34 @@ pub struct TotalStats {
 }
 
 #[command]
-async fn open_file_in_editor(file_path: String, working_directory: String, line_number: Option<u32>) -> Result<(), String> {
+async fn open_file_in_editor(
+    file_path: String,
+    working_directory: String,
+    line_number: Option<u32>,
+) -> Result<(), String> {
     // Normalize and construct absolute path
     let absolute_path = if Path::new(&file_path).is_absolute() {
         file_path.clone()
     } else {
         let working_path = Path::new(&working_directory);
         let file_relative = Path::new(&file_path);
-        working_path.join(file_relative)
+        working_path
+            .join(file_relative)
             .to_str()
             .ok_or("Invalid path encoding")?
             .to_string()
     };
-    
+
     // Try to find an available editor across all platforms
     let code_variants = if cfg!(target_os = "windows") {
         vec!["code.cmd", "code.exe", "code"]
     } else {
         vec!["code"]
     };
-    
+
     let mut code_result = None;
     let mut working_code_cmd = None;
-    
+
     for variant in code_variants {
         let result = Command::new(variant).arg("--version").output().await;
         if result.is_ok() && result.as_ref().unwrap().status.success() {
@@ -68,7 +73,7 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
             break;
         }
     }
-    
+
     // Also try using Windows cmd to resolve the path
     if code_result.is_none() && cfg!(target_os = "windows") {
         let cmd_result = Command::new("cmd")
@@ -80,7 +85,7 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
             working_code_cmd = Some("cmd-code");
         }
     }
-    
+
     let cmd = if let Some(_) = code_result {
         working_code_cmd.unwrap_or("code")
     } else {
@@ -116,7 +121,7 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
     } else {
         Command::new(cmd)
     };
-    
+
     // Configure command arguments based on editor
     match cmd {
         cmd if cmd.starts_with("code") || cmd == "cmd-code" => {
@@ -130,7 +135,7 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
             } else {
                 command.arg(&absolute_path);
             }
-        },
+        }
         "subl" => {
             // Sublime Text
             if let Some(line) = line_number {
@@ -138,7 +143,7 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
             } else {
                 command.arg(&absolute_path);
             }
-        },
+        }
         "atom" => {
             // Atom
             if let Some(line) = line_number {
@@ -146,7 +151,7 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
             } else {
                 command.arg(&absolute_path);
             }
-        },
+        }
         "notepad++" => {
             // Notepad++
             if let Some(line) = line_number {
@@ -154,11 +159,11 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
             } else {
                 command.arg(&absolute_path);
             }
-        },
+        }
         "notepad" => {
             // Basic notepad doesn't support line numbers
             command.arg(&absolute_path);
-        },
+        }
         _ => {
             command.arg(&absolute_path);
         }
@@ -180,7 +185,10 @@ async fn open_file_in_editor(file_path: String, working_directory: String, line_
 }
 
 #[command]
-async fn get_git_diff(directory_path: String, context_lines: Option<u32>) -> Result<GitDiffResult, String> {
+async fn get_git_diff(
+    directory_path: String,
+    context_lines: Option<u32>,
+) -> Result<GitDiffResult, String> {
     // Check if it's a git repository
     let git_check = Command::new("git")
         .args(&["rev-parse", "--git-dir"])
@@ -212,7 +220,7 @@ async fn get_git_diff(directory_path: String, context_lines: Option<u32>) -> Res
     }
 
     let diff_text = String::from_utf8_lossy(&diff_output.stdout);
-    
+
     if diff_text.trim().is_empty() {
         // Check for staged changes
         let staged_output = Command::new("git")
@@ -223,15 +231,19 @@ async fn get_git_diff(directory_path: String, context_lines: Option<u32>) -> Res
             .output()
             .await
             .map_err(|e| format!("Failed to check staged changes: {}", e))?;
-        
+
         let staged_text = String::from_utf8_lossy(&staged_output.stdout);
         if !staged_text.trim().is_empty() {
             return Ok(parse_diff_to_hunks(&staged_text, &directory_path));
         }
-        
+
         return Ok(GitDiffResult {
             hunks: Vec::new(),
-            total_stats: TotalStats { added: 0, removed: 0, files: 0 },
+            total_stats: TotalStats {
+                added: 0,
+                removed: 0,
+                files: 0,
+            },
         });
     }
 
@@ -240,11 +252,15 @@ async fn get_git_diff(directory_path: String, context_lines: Option<u32>) -> Res
 
 fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
     let mut hunks = Vec::new();
-    
+
     if diff_output.trim().is_empty() {
         return GitDiffResult {
             hunks,
-            total_stats: TotalStats { added: 0, removed: 0, files: 0 },
+            total_stats: TotalStats {
+                added: 0,
+                removed: 0,
+                files: 0,
+            },
         };
     }
 
@@ -259,12 +275,12 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
             .and_then(|ext| ext.to_str())
             .unwrap_or("")
             .to_string();
-        
+
         let file_stats = get_file_stats(&format!("{}/{}", base_path, file_name));
-        
+
         let mut i = 0;
         let mut hunk_count = 0;
-        
+
         while i < lines.len() {
             if lines[i].starts_with("@@") {
                 let hunk_header_regex = Regex::new(r"^(@@[^@]*@@)").unwrap();
@@ -273,21 +289,24 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
                 } else {
                     lines[i].to_string()
                 };
-                
+
                 let mut body = Vec::new();
                 i += 1;
-                
-                while i < lines.len() && !lines[i].starts_with("@@") && !lines[i].starts_with("diff --git") {
+
+                while i < lines.len()
+                    && !lines[i].starts_with("@@")
+                    && !lines[i].starts_with("diff --git")
+                {
                     // Skip Git's "No newline at end of file" notice
                     if !lines[i].starts_with("\\ No newline at end of file") {
                         body.push(lines[i].to_string());
                     }
                     i += 1;
                 }
-                
+
                 let added = body.iter().filter(|line| line.starts_with('+')).count();
                 let removed = body.iter().filter(|line| line.starts_with('-')).count();
-                
+
                 hunks.push(GitHunk {
                     file_name: file_name.clone(),
                     file_ext: file_ext.clone(),
@@ -301,7 +320,7 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
                         modified: file_stats.1.clone(),
                     },
                 });
-                
+
                 hunk_count += 1;
                 continue;
             }
@@ -313,7 +332,7 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
     let total_removed = hunks.iter().map(|h| h.stats.removed).sum();
     let unique_files: std::collections::HashSet<_> = hunks.iter().map(|h| &h.file_name).collect();
     let file_count = unique_files.len();
-    
+
     GitDiffResult {
         hunks,
         total_stats: TotalStats {
@@ -327,19 +346,19 @@ fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {
 fn extract_file_name(lines: &[&str]) -> String {
     let plus_line = lines.iter().find(|line| line.starts_with("+++ "));
     let minus_line = lines.iter().find(|line| line.starts_with("--- "));
-    
+
     if let Some(plus) = plus_line {
         if !plus.contains("/dev/null") {
             return plus.replacen("+++ b/", "", 1);
         }
     }
-    
+
     if let Some(minus) = minus_line {
         if !minus.contains("/dev/null") {
             return minus.replacen("--- a/", "", 1);
         }
     }
-    
+
     "Unknown file".to_string()
 }
 
@@ -360,7 +379,7 @@ fn get_file_stats(file_path: &str) -> (u64, String) {
                 })
                 .unwrap_or_else(|| "unknown".to_string());
             (size, modified)
-        },
+        }
         Err(_) => (0, "unknown".to_string()),
     }
 }
