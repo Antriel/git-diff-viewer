@@ -94,33 +94,15 @@
     }
   }
 
-  function handleContextChange(event) {
-    currentContextSize = event.detail.contextLines;
-    if (currentDirectory) {
-      loadGitDiff(currentDirectory, event.detail.contextLines);
-    }
-  }
-
-  function handleSearch(event) {
-    searchTerm = event.detail.term;
-  }
-
-  function handleVisibleCountChange(event) {
-    visibleCount = event.detail.count;
-    totalCount = event.detail.total;
-  }
-
-  function handleUntrackedToggle(event) {
-    includeUntracked = event.detail.includeUntracked;
-    if (currentDirectory) {
-      loadGitDiff(currentDirectory);
-    }
-  }
-
-  // Watch for changes to comparison settings
+  // Watch for changes to comparison settings, untracked toggle, and context size
   $effect(() => {
     if (currentDirectory) {
-      loadGitDiff(currentDirectory, null, comparisonSource, comparisonTarget);
+      loadGitDiff(
+        currentDirectory,
+        currentContextSize,
+        comparisonSource,
+        comparisonTarget
+      );
     }
   });
 
@@ -150,18 +132,15 @@
     <div class="diff-header-wrapper">
       <DiffHeader
         {gitDiffResult}
-        contextSize={currentContextSize}
-        {searchTerm}
-        {visibleCount}
-        totalCount={gitDiffResult?.hunks?.length || 0}
-        {includeUntracked}
+        bind:contextSize={currentContextSize}
+        bind:searchTerm
+        bind:visibleCount
+        bind:totalCount
+        bind:includeUntracked
         {currentDirectory}
         bind:comparisonSource
         bind:comparisonTarget
-        on:search={handleSearch}
         on:refresh={handleRefresh}
-        on:contextChange={handleContextChange}
-        on:untrackedToggle={handleUntrackedToggle}
       />
     </div>
   {/if}
@@ -182,9 +161,10 @@
   {:else if gitDiffResult}
     <DiffViewer
       {gitDiffResult}
-      {searchTerm}
+      bind:searchTerm
       {currentDirectory}
-      on:visibleCountChange={handleVisibleCountChange}
+      bind:visibleCount
+      bind:totalCount
     />
   {:else if currentDirectory}
     <div class="no-changes">

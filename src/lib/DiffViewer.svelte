@@ -1,10 +1,13 @@
 <script>
-  import { createEventDispatcher } from "svelte";
   import DiffHunk from "./DiffHunk.svelte";
 
-  let { gitDiffResult, searchTerm = "", currentDirectory = "" } = $props();
-
-  const dispatch = createEventDispatcher();
+  let {
+    gitDiffResult,
+    searchTerm = "",
+    currentDirectory = "",
+    visibleCount = $bindable(0),
+    totalCount = $bindable(0),
+  } = $props();
 
   // Use derived state to automatically compute filtered hunks
   let filteredHunks = $derived.by(() => {
@@ -31,14 +34,10 @@
     });
   });
 
-  let visibleCount = $derived(filteredHunks.length);
-
-  // Dispatch visible count changes to parent
+  // Update bindable props
   $effect(() => {
-    dispatch("visibleCountChange", {
-      count: visibleCount,
-      total: gitDiffResult?.hunks?.length || 0,
-    });
+    visibleCount = filteredHunks.length;
+    totalCount = gitDiffResult?.hunks?.length || 0;
   });
 </script>
 

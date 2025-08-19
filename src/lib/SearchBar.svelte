@@ -1,21 +1,16 @@
 <script>
-  import { createEventDispatcher } from "svelte";
-
-  let { searchTerm = "", resultsCount = 0, totalCount = 0 } = $props();
-
-  const dispatch = createEventDispatcher();
+  let {
+    searchTerm = $bindable(""),
+    resultsCount = $bindable(0),
+    totalCount = $bindable(0),
+  } = $props();
 
   let inputElement;
 
-  function handleInput(event) {
-    const term = event.target.value;
-    dispatch("search", { term });
-  }
-
   function clearSearch() {
+    searchTerm = "";
     if (inputElement) {
       inputElement.value = "";
-      dispatch("search", { term: "" });
     }
   }
 
@@ -53,8 +48,7 @@
       bind:this={inputElement}
       type="text"
       placeholder="Search changes... (Ctrl+F)"
-      value={searchTerm}
-      oninput={handleInput}
+      bind:value={searchTerm}
       onkeydown={handleKeydown}
       class="search-input"
     />

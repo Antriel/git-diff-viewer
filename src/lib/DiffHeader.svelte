@@ -5,11 +5,11 @@
 
   let {
     gitDiffResult = null,
-    contextSize = 3,
-    searchTerm = "",
-    visibleCount = 0,
-    totalCount = 0,
-    includeUntracked = false,
+    contextSize = $bindable(3),
+    searchTerm = $bindable(""),
+    visibleCount = $bindable(0),
+    totalCount = $bindable(0),
+    includeUntracked = $bindable(false),
     currentDirectory = "",
     comparisonSource = $bindable("working"),
     comparisonTarget = $bindable("HEAD"),
@@ -17,23 +17,12 @@
 
   const dispatch = createEventDispatcher();
 
-  function handleSearch(event) {
-    dispatch("search", event.detail);
-  }
-
   function handleRefresh() {
     dispatch("refresh");
   }
 
   function adjustContext(delta) {
-    const newContextSize = Math.max(0, contextSize + delta);
-    if (newContextSize !== contextSize) {
-      dispatch("contextChange", { contextLines: newContextSize });
-    }
-  }
-
-  function handleUntrackedToggle() {
-    dispatch("untrackedToggle", { includeUntracked });
+    contextSize = Math.max(0, contextSize + delta);
   }
 </script>
 
@@ -50,18 +39,13 @@
 
   <div class="toolbar">
     <SearchBar
-      {searchTerm}
-      resultsCount={visibleCount}
-      {totalCount}
-      on:search={handleSearch}
+      bind:searchTerm
+      bind:resultsCount={visibleCount}
+      bind:totalCount
     />
     <div class="untracked-toggle">
       <label>
-        <input
-          type="checkbox"
-          bind:checked={includeUntracked}
-          onchange={handleUntrackedToggle}
-        />
+        <input type="checkbox" bind:checked={includeUntracked} />
         Include untracked files
       </label>
     </div>
