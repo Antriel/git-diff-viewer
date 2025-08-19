@@ -109,16 +109,16 @@
       const isRemoved = prefix === "-";
       const isContext = prefix === " ";
 
-      let oldNum = 0;
-      let newNum = 0;
+      let oldNum = ' ';
+      let newNum = ' ';
 
       if (isContext) {
-        oldNum = oldLineNum++;
-        newNum = newLineNum++;
+        oldNum = String(oldLineNum++);
+        newNum = String(newLineNum++);
       } else if (isAdded) {
-        newNum = newLineNum++;
+        newNum = String(newLineNum++);
       } else if (isRemoved) {
-        oldNum = oldLineNum++;
+        oldNum = String(oldLineNum++);
       }
 
       const cssClasses = [];
