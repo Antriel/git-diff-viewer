@@ -1,7 +1,7 @@
 <script>
-  import { createEventDispatcher, onMount } from "svelte";
-  import { invoke } from "@tauri-apps/api/core";
+  import { createEventDispatcher } from "svelte";
   import SearchBar from "./SearchBar.svelte";
+  import ComparisonControls from "./ComparisonControls.svelte";
 
   let {
     gitDiffResult = null,
@@ -11,12 +11,9 @@
     totalCount = 0,
     includeUntracked = false,
     currentDirectory = "",
+    comparisonSource = $bindable("working"),
+    comparisonTarget = $bindable("HEAD"),
   } = $props();
-
-  /** @type {any} */
-  let gitRefs = $state(null);
-  let comparisonSource = $state("working"); // "working" or "staged"
-  let comparisonTarget = $state("HEAD"); // HEAD, branch name, or commit hash
 
   const dispatch = createEventDispatcher();
 
@@ -38,59 +35,6 @@
   function handleUntrackedToggle() {
     dispatch("untrackedToggle", { includeUntracked });
   }
-
-  function getDisplayName(value) {
-    if (value === "working") return "Working Directory";
-    if (value === "staged") return "Staged Files";
-    if (value === "HEAD") return "HEAD";
-
-    // Check if it's a commit hash
-    if (gitRefs?.recent_commits) {
-      const commit = gitRefs.recent_commits.find((c) => c.short_hash === value);
-      if (commit) return commit.name;
-    }
-
-    // Otherwise it's probably a branch name
-    return value;
-  }
-
-  async function loadGitRefs() {
-    if (!currentDirectory) return;
-    try {
-      gitRefs = await invoke("get_git_refs", {
-        directoryPath: currentDirectory,
-      });
-      console.log(gitRefs);
-    } catch (error) {
-      console.error("Failed to load git refs:", error);
-    }
-  }
-
-  function handleComparisonChange() {
-    dispatch("comparisonChange", {
-      source: comparisonSource,
-      target: comparisonTarget,
-    });
-  }
-
-  function resetComparison() {
-    comparisonSource = "working";
-    comparisonTarget = "HEAD";
-    handleComparisonChange();
-  }
-
-  onMount(() => {
-    if (currentDirectory) {
-      loadGitRefs();
-    }
-  });
-
-  // Watch for changes to currentDirectory and reload git refs
-  $effect(() => {
-    if (currentDirectory) {
-      loadGitRefs();
-    }
-  });
 </script>
 
 <div class="diff-header">
@@ -134,77 +78,11 @@
     </button>
   </div>
 
-  <div class="comparison-controls">
-    <div class="comparison-row">
-      <div class="comparison-field">
-        <label for="source-select">Compare from:</label>
-        <select
-          id="source-select"
-          bind:value={comparisonSource}
-          onchange={handleComparisonChange}
-        >
-          <option value="working">Working Directory</option>
-          <option value="staged">Staged Files</option>
-          {#if gitRefs?.branches}
-            <optgroup label="Branches">
-              {#each gitRefs.branches as branch}
-                <option value={branch.name}>{branch.name}</option>
-              {/each}
-            </optgroup>
-          {/if}
-          {#if gitRefs?.recent_commits}
-            <optgroup label="Recent Commits">
-              {#each gitRefs.recent_commits as commit}
-                <option value={commit.short_hash}>{commit.name}</option>
-              {/each}
-            </optgroup>
-          {/if}
-        </select>
-      </div>
-
-      <div class="comparison-field">
-        <label for="target-select">Compare to:</label>
-        <select
-          id="target-select"
-          bind:value={comparisonTarget}
-          onchange={handleComparisonChange}
-        >
-          <option value="HEAD">HEAD</option>
-          {#if gitRefs?.branches}
-            <optgroup label="Branches">
-              {#each gitRefs.branches as branch}
-                <option value={branch.name}>{branch.name}</option>
-              {/each}
-            </optgroup>
-          {/if}
-          {#if gitRefs?.recent_commits}
-            <optgroup label="Recent Commits">
-              {#each gitRefs.recent_commits as commit}
-                <option value={commit.short_hash}>{commit.name}</option>
-              {/each}
-            </optgroup>
-          {/if}
-        </select>
-      </div>
-
-      <button
-        onclick={resetComparison}
-        class="reset-comparison-btn"
-        title="Reset to default"
-      >
-        ↺
-      </button>
-    </div>
-
-    <div class="comparison-info">
-      <small>
-        Comparing:
-        <strong>{getDisplayName(comparisonSource)}</strong>
-        vs
-        <strong>{getDisplayName(comparisonTarget)}</strong>
-      </small>
-    </div>
-  </div>
+  <ComparisonControls
+    {currentDirectory}
+    bind:comparisonSource
+    bind:comparisonTarget
+  />
 </div>
 
 <style>
@@ -307,66 +185,6 @@
     font-weight: bold;
   }
 
-  .comparison-controls {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #dee2e6;
-  }
-
-  .comparison-row {
-    display: flex;
-    align-items: end;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 0.5rem;
-  }
-
-  .comparison-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    min-width: 200px;
-  }
-
-  .comparison-field label {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #495057;
-  }
-
-  .comparison-field select {
-    padding: 0.4rem;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    background: #fff;
-  }
-
-  .reset-comparison-btn {
-    background: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    height: fit-content;
-    transition: all 0.2s;
-  }
-
-  .reset-comparison-btn:hover {
-    background: #5a6268;
-  }
-
-  .comparison-info {
-    color: #6c757d;
-    font-size: 0.8rem;
-  }
-
-  .comparison-info strong {
-    color: #495057;
-  }
-
   @media (prefers-color-scheme: dark) {
     .diff-header {
       background: #333;
@@ -407,28 +225,6 @@
 
     .context-controls button:hover:not(:disabled) {
       background: #555;
-    }
-
-    .comparison-controls {
-      border-color: #555;
-    }
-
-    .comparison-field label {
-      color: #adb5bd;
-    }
-
-    .comparison-field select {
-      background: #444;
-      border-color: #666;
-      color: #f6f6f6;
-    }
-
-    .comparison-info {
-      color: #adb5bd;
-    }
-
-    .comparison-info strong {
-      color: #f6f6f6;
     }
   }
 </style>

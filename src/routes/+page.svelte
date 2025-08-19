@@ -83,6 +83,8 @@
 
   function handleDirectorySelected(event) {
     currentDirectory = event.detail.directory;
+    comparisonSource = "working";
+    comparisonTarget = "HEAD";
     loadGitDiff(currentDirectory);
   }
 
@@ -109,20 +111,18 @@
   }
 
   function handleUntrackedToggle(event) {
-    console.log(event.detail);
     includeUntracked = event.detail.includeUntracked;
     if (currentDirectory) {
       loadGitDiff(currentDirectory);
     }
   }
 
-  function handleComparisonChange(event) {
-    comparisonSource = event.detail.source;
-    comparisonTarget = event.detail.target;
+  // Watch for changes to comparison settings
+  $effect(() => {
     if (currentDirectory) {
       loadGitDiff(currentDirectory, null, comparisonSource, comparisonTarget);
     }
-  }
+  });
 
   onMount(() => {
     // Load the last opened project
@@ -156,11 +156,12 @@
         totalCount={gitDiffResult?.hunks?.length || 0}
         {includeUntracked}
         {currentDirectory}
+        bind:comparisonSource
+        bind:comparisonTarget
         on:search={handleSearch}
         on:refresh={handleRefresh}
         on:contextChange={handleContextChange}
         on:untrackedToggle={handleUntrackedToggle}
-        on:comparisonChange={handleComparisonChange}
       />
     </div>
   {/if}
