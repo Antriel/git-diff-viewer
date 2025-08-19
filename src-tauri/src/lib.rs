@@ -36,6 +36,20 @@ pub struct TotalStats {
     files: usize,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitRef {
+    name: String,
+    ref_type: String, // "branch", "tag", "commit"
+    short_hash: Option<String>,
+    message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GitRefs {
+    branches: Vec<GitRef>,
+    recent_commits: Vec<GitRef>,
+}
+
 #[command]
 async fn open_file_in_editor(
     file_path: String,
@@ -185,10 +199,86 @@ async fn open_file_in_editor(
 }
 
 #[command]
+async fn get_git_refs(directory_path: String) -> Result<GitRefs, String> {
+    // Check if it's a git repository
+    let git_check = Command::new("git")
+        .args(&["rev-parse", "--git-dir"])
+        .current_dir(&directory_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+
+    if !git_check.status.success() {
+        return Err("Not a git repository or git not found".to_string());
+    }
+
+    let mut git_refs = GitRefs {
+        branches: Vec::new(),
+        recent_commits: Vec::new(),
+    };
+
+    // Get branches
+    let branch_output = Command::new("git")
+        .args(&["branch", "-a", "--format=%(refname:short)"])
+        .current_dir(&directory_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to get branches: {}", e))?;
+
+    if branch_output.status.success() {
+        let branch_text = String::from_utf8_lossy(&branch_output.stdout);
+        for line in branch_text.lines() {
+            let branch_name = line.trim();
+            if !branch_name.is_empty() && !branch_name.starts_with("origin/HEAD") {
+                git_refs.branches.push(GitRef {
+                    name: branch_name.to_string(),
+                    ref_type: "branch".to_string(),
+                    short_hash: None,
+                    message: None,
+                });
+            }
+        }
+    }
+
+    // Get recent commits
+    let commit_output = Command::new("git")
+        .args(&["log", "--oneline", "-20", "--pretty=format:%h|%s"])
+        .current_dir(&directory_path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .await
+        .map_err(|e| format!("Failed to get recent commits: {}", e))?;
+
+    if commit_output.status.success() {
+        let commit_text = String::from_utf8_lossy(&commit_output.stdout);
+        for line in commit_text.lines() {
+            let parts: Vec<&str> = line.splitn(2, '|').collect();
+            if parts.len() == 2 {
+                git_refs.recent_commits.push(GitRef {
+                    name: format!("{} - {}", parts[0], parts[1]),
+                    ref_type: "commit".to_string(),
+                    short_hash: Some(parts[0].to_string()),
+                    message: Some(parts[1].to_string()),
+                });
+            }
+        }
+    }
+
+    Ok(git_refs)
+}
+
+#[command]
 async fn get_git_diff(
     directory_path: String,
     context_lines: Option<u32>,
     include_untracked: Option<bool>,
+    comparison_source: Option<String>, // "working" or "staged"
+    comparison_target: Option<String>, // target ref (HEAD, branch, commit)
 ) -> Result<GitDiffResult, String> {
     // Check if it's a git repository
     let git_check = Command::new("git")
@@ -204,10 +294,39 @@ async fn get_git_diff(
         return Err("Not a git repository or git not found".to_string());
     }
 
-    // Get git diff
+    // Get git diff with source/target model
     let context_arg = format!("-U{}", context_lines.unwrap_or(3));
+    let mut diff_args = vec!["diff".to_string(), context_arg.clone()];
+
+    // Determine what to compare based on source and target
+    let source = comparison_source.as_deref().unwrap_or("working");
+    let target = comparison_target.as_deref().unwrap_or("HEAD");
+
+    match source {
+        "staged" => {
+            // Compare staged files against target
+            diff_args.push("--staged".to_string());
+            if target != "HEAD" {
+                diff_args.push(target.to_string());
+            }
+        }
+        "working" => {
+            // Compare working directory against target
+            diff_args.push(target.to_string());
+        }
+        _ => {
+            // Source is a commit/branch, compare it against target (commit-to-commit)
+            if source == target {
+                // Same source and target would result in no diff, so compare source against HEAD
+                diff_args.push(format!("{}..HEAD", source));
+            } else {
+                diff_args.push(format!("{}..{}", source, target));
+            }
+        }
+    }
+
     let diff_output = Command::new("git")
-        .args(&["diff", &context_arg, "HEAD"])
+        .args(&diff_args.iter().map(|s| s.as_str()).collect::<Vec<_>>())
         .current_dir(&directory_path)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -272,8 +391,8 @@ async fn get_git_diff(
         }
     }
 
-    if all_diff_text.trim().is_empty() {
-        // Check for staged changes
+    if all_diff_text.trim().is_empty() && source == "working" && target == "HEAD" {
+        // Only check for staged changes when doing default comparison (working vs HEAD)
         let staged_output = Command::new("git")
             .args(&["diff", &context_arg, "--cached"])
             .current_dir(&directory_path)
@@ -440,7 +559,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![get_git_diff, open_file_in_editor])
+        .invoke_handler(tauri::generate_handler![
+            get_git_diff,
+            get_git_refs,
+            open_file_in_editor
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

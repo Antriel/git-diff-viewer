@@ -15,13 +15,24 @@
   let visibleCount = $state(0);
   let totalCount = $state(0);
   let includeUntracked = $state(false);
+  let comparisonSource = $state("working");
+  let comparisonTarget = $state("HEAD");
 
-  async function loadGitDiff(directory, contextLines = null) {
+  async function loadGitDiff(
+    directory,
+    contextLines = null,
+    source = null,
+    target = null
+  ) {
     if (!directory) return;
 
     // Use current context size if not explicitly provided
     const actualContextLines =
       contextLines !== null ? contextLines : currentContextSize;
+
+    // Use current comparison values if not explicitly provided
+    const actualSource = source !== null ? source : comparisonSource;
+    const actualTarget = target !== null ? target : comparisonTarget;
 
     loading = true;
     error = "";
@@ -31,6 +42,8 @@
         directoryPath: directory,
         contextLines: actualContextLines,
         includeUntracked: includeUntracked,
+        comparisonSource: actualSource,
+        comparisonTarget: actualTarget,
       });
       gitDiffResult = result;
 
@@ -103,6 +116,14 @@
     }
   }
 
+  function handleComparisonChange(event) {
+    comparisonSource = event.detail.source;
+    comparisonTarget = event.detail.target;
+    if (currentDirectory) {
+      loadGitDiff(currentDirectory, null, comparisonSource, comparisonTarget);
+    }
+  }
+
   onMount(() => {
     // Load the last opened project
     const savedProjects = JSON.parse(
@@ -134,10 +155,12 @@
         {visibleCount}
         totalCount={gitDiffResult?.hunks?.length || 0}
         {includeUntracked}
+        {currentDirectory}
         on:search={handleSearch}
         on:refresh={handleRefresh}
         on:contextChange={handleContextChange}
         on:untrackedToggle={handleUntrackedToggle}
+        on:comparisonChange={handleComparisonChange}
       />
     </div>
   {/if}
