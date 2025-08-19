@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from "svelte";
   import SearchBar from "./SearchBar.svelte";
   import ComparisonControls from "./ComparisonControls.svelte";
 
@@ -13,13 +12,8 @@
     currentDirectory = "",
     comparisonSource = $bindable("working"),
     comparisonTarget = $bindable("HEAD"),
+    onRefresh = () => {}
   } = $props();
-
-  const dispatch = createEventDispatcher();
-
-  function handleRefresh() {
-    dispatch("refresh");
-  }
 
   function adjustContext(delta) {
     contextSize = Math.max(0, contextSize + delta);
@@ -57,7 +51,7 @@
       <span class="context-size">{contextSize}</span>
       <button onclick={() => adjustContext(1)}>+</button>
     </div>
-    <button onclick={handleRefresh} class="refresh-btn" title="Refresh">
+    <button onclick={onRefresh} class="refresh-btn" title="Refresh">
       🔄
     </button>
   </div>

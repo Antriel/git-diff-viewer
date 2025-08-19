@@ -1,10 +1,7 @@
 <script>
   import { open } from "@tauri-apps/plugin-dialog";
-  import { createEventDispatcher } from "svelte";
 
-  let { currentDirectory = "" } = $props();
-
-  const dispatch = createEventDispatcher();
+  let { currentDirectory = "", onDirectorySelected = () => {} } = $props();
 
   let recentProjects = $state([]);
   let showRecent = $state(false);
@@ -18,7 +15,7 @@
       });
 
       if (selected) {
-        dispatch("directorySelected", { directory: selected });
+        onDirectorySelected({ directory: selected });
       }
     } catch (error) {
       console.error("Failed to select directory:", error);
@@ -31,7 +28,7 @@
   }
 
   function selectRecentProject(project) {
-    dispatch("directorySelected", { directory: project.path });
+    onDirectorySelected({ directory: project.path });
     showRecent = false;
   }
 

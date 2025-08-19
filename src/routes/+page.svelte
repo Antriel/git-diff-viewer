@@ -81,8 +81,8 @@
     }
   }
 
-  function handleDirectorySelected(event) {
-    currentDirectory = event.detail.directory;
+  function handleDirectorySelected(obj) {
+    currentDirectory = obj.directory;
     comparisonSource = "working";
     comparisonTarget = "HEAD";
     loadGitDiff(currentDirectory);
@@ -124,7 +124,7 @@
     <h1>Git Diff Viewer</h1>
     <DirectorySelector
       {currentDirectory}
-      on:directorySelected={handleDirectorySelected}
+      onDirectorySelected={handleDirectorySelected}
     />
   </header>
 
@@ -140,7 +140,7 @@
         {currentDirectory}
         bind:comparisonSource
         bind:comparisonTarget
-        on:refresh={handleRefresh}
+        onRefresh={handleRefresh}
       />
     </div>
   {/if}
