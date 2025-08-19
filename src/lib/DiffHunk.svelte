@@ -245,7 +245,6 @@
 
   .hunk-location {
     font-family: monospace;
-    font-size: 0.85rem;
     color: #666;
     background: #f0f0f0;
     padding: 0.2rem 0.4rem;
@@ -258,7 +257,6 @@
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     cursor: pointer;
-    font-size: 0.85rem;
     color: #666;
     transition: all 0.2s ease;
     margin-left: 0.5rem;
@@ -300,20 +298,9 @@
     cursor: help;
   }
 
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: #f8f9fa;
-    border-bottom: 1px solid #eee;
-    font-size: 0.85rem;
-  }
-
   .code-container {
     overflow-x: auto;
     overflow-y: hidden;
-    /* Removed max-height and disabled vertical scrolling to allow hunks to expand naturally */
   }
 
   .code {
@@ -321,8 +308,6 @@
     padding: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
       "Liberation Mono", monospace;
-    font-size: 0.85rem;
-    line-height: 1.4;
   }
 
   .code-line {
@@ -430,12 +415,6 @@
       color: #ccc;
     }
 
-    .controls {
-      background: #333;
-      border-color: #555;
-      color: #f6f6f6;
-    }
-
     .line-num {
       background: #333;
       border-color: #555;
@@ -480,8 +459,5 @@
       flex: 0 0 2.5em;
     }
 
-    .code {
-      font-size: 0.8rem;
-    }
   }
 </style>
