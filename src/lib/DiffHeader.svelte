@@ -8,6 +8,7 @@
     searchTerm = "",
     visibleCount = 0,
     totalCount = 0,
+    includeUntracked = false,
   } = $props();
 
   const dispatch = createEventDispatcher();
@@ -25,6 +26,10 @@
     if (newContextSize !== contextSize) {
       dispatch("contextChange", { contextLines: newContextSize });
     }
+  }
+
+  function handleUntrackedToggle() {
+    dispatch("untrackedToggle", { includeUntracked });
   }
 </script>
 
@@ -46,6 +51,16 @@
       {totalCount}
       on:search={handleSearch}
     />
+    <div class="untracked-toggle">
+      <label>
+        <input
+          type="checkbox"
+          bind:checked={includeUntracked}
+          onchange={handleUntrackedToggle}
+        />
+        Include untracked files
+      </label>
+    </div>
     <div class="context-controls">
       <span>Context:</span>
       <button onclick={() => adjustContext(-1)} disabled={contextSize === 0}
@@ -110,6 +125,24 @@
     background: #e9ecef;
   }
 
+  .untracked-toggle {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+
+  .untracked-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .untracked-toggle input[type="checkbox"] {
+    cursor: pointer;
+  }
+
   .context-controls {
     display: flex;
     align-items: center;
@@ -164,6 +197,10 @@
 
     .refresh-btn:hover {
       background: #555;
+    }
+
+    .untracked-toggle {
+      color: #f6f6f6;
     }
 
     .context-controls {

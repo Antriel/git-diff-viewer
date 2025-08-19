@@ -458,6 +458,5 @@
     .line-num {
       flex: 0 0 2.5em;
     }
-
   }
 </style>

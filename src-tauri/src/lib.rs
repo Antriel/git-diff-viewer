@@ -188,6 +188,7 @@ async fn open_file_in_editor(
 async fn get_git_diff(
     directory_path: String,
     context_lines: Option<u32>,
+    include_untracked: Option<bool>,
 ) -> Result<GitDiffResult, String> {
     // Check if it's a git repository
     let git_check = Command::new("git")
@@ -220,8 +221,58 @@ async fn get_git_diff(
     }
 
     let diff_text = String::from_utf8_lossy(&diff_output.stdout);
+    let mut all_diff_text = diff_text.to_string();
 
-    if diff_text.trim().is_empty() {
+    // Handle untracked files if requested
+    if include_untracked.unwrap_or(false) {
+        let untracked_output = Command::new("git")
+            .args(&["ls-files", "--others", "--exclude-standard"])
+            .current_dir(&directory_path)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .output()
+            .await
+            .map_err(|e| format!("Failed to get untracked files: {}", e))?;
+
+        let untracked_files = String::from_utf8_lossy(&untracked_output.stdout);
+
+        for untracked_file in untracked_files.lines() {
+            if !untracked_file.trim().is_empty() {
+                // Get diff for untracked file using git diff --no-index NUL filepath
+                let null_device = if cfg!(target_os = "windows") {
+                    "NUL"
+                } else {
+                    "/dev/null"
+                };
+                let untracked_diff = Command::new("git")
+                    .args(&[
+                        "diff",
+                        "--no-index",
+                        &context_arg,
+                        null_device,
+                        untracked_file,
+                    ])
+                    .current_dir(&directory_path)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output()
+                    .await
+                    .map_err(|e| {
+                        format!("Failed to diff untracked file {}: {}", untracked_file, e)
+                    })?;
+
+                let untracked_diff_text = String::from_utf8_lossy(&untracked_diff.stdout);
+                if !untracked_diff_text.trim().is_empty() {
+                    if !all_diff_text.trim().is_empty() {
+                        all_diff_text.push('\n');
+                    }
+                    all_diff_text.push_str(&untracked_diff_text);
+                }
+            }
+        }
+    }
+
+    if all_diff_text.trim().is_empty() {
         // Check for staged changes
         let staged_output = Command::new("git")
             .args(&["diff", &context_arg, "--cached"])
@@ -247,7 +298,7 @@ async fn get_git_diff(
         });
     }
 
-    Ok(parse_diff_to_hunks(&diff_text, &directory_path))
+    Ok(parse_diff_to_hunks(&all_diff_text, &directory_path))
 }
 
 fn parse_diff_to_hunks(diff_output: &str, base_path: &str) -> GitDiffResult {

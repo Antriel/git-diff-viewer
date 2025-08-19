@@ -14,6 +14,7 @@
   let searchTerm = $state("");
   let visibleCount = $state(0);
   let totalCount = $state(0);
+  let includeUntracked = $state(false);
 
   async function loadGitDiff(directory, contextLines = null) {
     if (!directory) return;
@@ -29,6 +30,7 @@
       const result = await invoke("get_git_diff", {
         directoryPath: directory,
         contextLines: actualContextLines,
+        includeUntracked: includeUntracked,
       });
       gitDiffResult = result;
 
@@ -93,6 +95,14 @@
     totalCount = event.detail.total;
   }
 
+  function handleUntrackedToggle(event) {
+    console.log(event.detail);
+    includeUntracked = event.detail.includeUntracked;
+    if (currentDirectory) {
+      loadGitDiff(currentDirectory);
+    }
+  }
+
   onMount(() => {
     // Load the last opened project
     const savedProjects = JSON.parse(
@@ -123,9 +133,11 @@
         {searchTerm}
         {visibleCount}
         totalCount={gitDiffResult?.hunks?.length || 0}
+        {includeUntracked}
         on:search={handleSearch}
         on:refresh={handleRefresh}
         on:contextChange={handleContextChange}
+        on:untrackedToggle={handleUntrackedToggle}
       />
     </div>
   {/if}
