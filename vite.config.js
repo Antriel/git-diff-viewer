@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
+import pkg from './package.json';
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
@@ -7,6 +8,15 @@ const host = process.env.TAURI_DEV_HOST;
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [sveltekit()],
+
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_NAME__: JSON.stringify(pkg.name),
+    __APP_DESCRIPTION__: JSON.stringify(pkg.description),
+    __APP_AUTHOR__: JSON.stringify(pkg.author),
+    __APP_LICENSE__: JSON.stringify(pkg.license),
+    __APP_REPOSITORY__: JSON.stringify(pkg.repository.url),
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

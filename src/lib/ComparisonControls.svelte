@@ -31,7 +31,6 @@
       gitRefs = await invoke("get_git_refs", {
         directoryPath: currentDirectory,
       });
-      console.log(gitRefs);
     } catch (error) {
       console.error("Failed to load git refs:", error);
     }

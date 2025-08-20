@@ -12,7 +12,7 @@
     currentDirectory = "",
     comparisonSource = $bindable("working"),
     comparisonTarget = $bindable("HEAD"),
-    onRefresh = () => {}
+    onRefresh = () => {},
   } = $props();
 
   function adjustContext(delta) {

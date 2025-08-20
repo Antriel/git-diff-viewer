@@ -4,6 +4,7 @@
   import DiffViewer from "../lib/DiffViewer.svelte";
   import DiffHeader from "../lib/DiffHeader.svelte";
   import DirectorySelector from "../lib/DirectorySelector.svelte";
+  import AboutModal from "../lib/AboutModal.svelte";
 
   let currentDirectory = $state("");
   /** @type {any} */
@@ -17,6 +18,7 @@
   let includeUntracked = $state(false);
   let comparisonSource = $state("working");
   let comparisonTarget = $state("HEAD");
+  let showAbout = $state(false);
 
   async function loadGitDiff(
     directory,
@@ -121,7 +123,10 @@
 
 <main class="container">
   <header>
-    <h1>Git Diff Viewer</h1>
+    <div class="header-left">
+      <h1>Git Diff Viewer</h1>
+      <AboutModal bind:show={showAbout} />
+    </div>
     <DirectorySelector
       {currentDirectory}
       onDirectorySelected={handleDirectorySelected}
@@ -212,6 +217,12 @@
     z-index: 100;
     padding: 1rem;
     margin: -1rem -1rem 0 -1rem;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
 
   h1 {
