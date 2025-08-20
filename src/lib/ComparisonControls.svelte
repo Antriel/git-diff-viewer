@@ -59,7 +59,14 @@
 </script>
 
 <div class="comparison-controls">
-  <div class="comparison-header" onclick={toggleExpanded}>
+  <div
+    class="comparison-header"
+    onclick={toggleExpanded}
+    onkeydown={(e) => (e.key === "Enter" || e.key === " ") && toggleExpanded()}
+    tabindex="0"
+    role="button"
+    aria-expanded={isExpanded}
+  >
     <div class="comparison-summary">
       <span class="comparison-label">Comparing:</span>
       <strong>{getDisplayName(comparisonSource)}</strong>

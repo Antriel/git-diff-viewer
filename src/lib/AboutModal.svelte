@@ -9,8 +9,14 @@
 </div>
 
 {#if show}
-  <div class="modal-overlay" onclick={() => (show = false)}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="modal-overlay"
+    onclick={(e) => e.target === e.currentTarget && (show = false)}
+    onkeydown={(e) => e.key === "Escape" && (show = false)}
+    tabindex="-1"
+    role="button"
+  >
+    <div class="modal-content">
       <div class="modal-header">
         <h2>About Git Diff Viewer</h2>
         <button class="close-btn" onclick={() => (show = false)}>×</button>
