@@ -36,28 +36,7 @@
       });
       gitDiffResult = result;
 
-      // Save to localStorage for project history
-      const savedProjects = JSON.parse(
-        localStorage.getItem("gitDiffProjects") || "[]"
-      );
-      const existing = savedProjects.find((p) => p.path === currentDirectory);
-
-      if (existing) {
-        existing.lastOpened = new Date().toISOString();
-      } else {
-        savedProjects.unshift({
-          path: currentDirectory,
-          name: currentDirectory.split(/[/\\]/).pop() || currentDirectory,
-          lastOpened: new Date().toISOString(),
-        });
-      }
-
-      // Keep only the last 10 projects
-      if (savedProjects.length > 10) {
-        savedProjects.splice(10);
-      }
-
-      localStorage.setItem("gitDiffProjects", JSON.stringify(savedProjects));
+      saveProjectToHistory(currentDirectory);
     } catch (err) {
       if (err instanceof Error) {
         error = err.message;
@@ -97,6 +76,30 @@
       loadGitDiff();
     }
   });
+
+  function saveProjectToHistory(directory) {
+    const savedProjects = JSON.parse(
+      localStorage.getItem("gitDiffProjects") || "[]"
+    );
+    const existing = savedProjects.find((p) => p.path === directory);
+
+    if (existing) {
+      existing.lastOpened = new Date().toISOString();
+    } else {
+      savedProjects.unshift({
+        path: directory,
+        name: directory.split(/[/\\]/).pop() || directory,
+        lastOpened: new Date().toISOString(),
+      });
+    }
+
+    // Keep only the last 10 projects
+    if (savedProjects.length > 10) {
+      savedProjects.splice(10);
+    }
+
+    localStorage.setItem("gitDiffProjects", JSON.stringify(savedProjects));
+  }
 </script>
 
 <main class="container">
