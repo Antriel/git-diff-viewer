@@ -89,6 +89,12 @@
       });
     }
 
+    // Sort by lastOpened date (most recent first)
+    savedProjects.sort(
+      (a, b) =>
+        new Date(b.lastOpened).getTime() - new Date(a.lastOpened).getTime()
+    );
+
     // Keep only the last 10 projects
     if (savedProjects.length > 10) {
       savedProjects.splice(10);
