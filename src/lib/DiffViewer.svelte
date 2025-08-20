@@ -3,7 +3,7 @@
 
   let {
     gitDiffResult,
-    searchTerm = "",
+    searchTerm = $bindable(""),
     currentDirectory = "",
     visibleCount = $bindable(0),
     totalCount = $bindable(0),

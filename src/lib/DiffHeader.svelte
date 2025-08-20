@@ -51,7 +51,7 @@
       <span class="context-size">{contextSize}</span>
       <button onclick={() => adjustContext(1)}>+</button>
     </div>
-    <button onclick={onRefresh} class="refresh-btn" title="Refresh">
+    <button onclick={() => onRefresh()} class="refresh-btn" title="Refresh">
       🔄
     </button>
   </div>

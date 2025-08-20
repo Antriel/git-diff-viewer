@@ -101,9 +101,9 @@
     if (currentDirectory) {
       loadGitDiff(
         currentDirectory,
-        currentContextSize,
-        comparisonSource,
-        comparisonTarget
+        null,
+        null,
+        null
       );
     }
   });
