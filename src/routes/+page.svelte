@@ -20,32 +20,19 @@
   let comparisonTarget = $state("HEAD");
   let showAbout = $state(false);
 
-  async function loadGitDiff(
-    directory,
-    contextLines = null,
-    source = null,
-    target = null
-  ) {
-    if (!directory) return;
-
-    // Use current context size if not explicitly provided
-    const actualContextLines =
-      contextLines !== null ? contextLines : currentContextSize;
-
-    // Use current comparison values if not explicitly provided
-    const actualSource = source !== null ? source : comparisonSource;
-    const actualTarget = target !== null ? target : comparisonTarget;
+  async function loadGitDiff() {
+    if (!currentDirectory) return;
 
     loading = true;
     error = "";
 
     try {
       const result = await invoke("get_git_diff", {
-        directoryPath: directory,
-        contextLines: actualContextLines,
+        directoryPath: currentDirectory,
+        contextLines: currentContextSize,
         includeUntracked: includeUntracked,
-        comparisonSource: actualSource,
-        comparisonTarget: actualTarget,
+        comparisonSource: comparisonSource,
+        comparisonTarget: comparisonTarget,
       });
       gitDiffResult = result;
 
@@ -53,14 +40,14 @@
       const savedProjects = JSON.parse(
         localStorage.getItem("gitDiffProjects") || "[]"
       );
-      const existing = savedProjects.find((p) => p.path === directory);
+      const existing = savedProjects.find((p) => p.path === currentDirectory);
 
       if (existing) {
         existing.lastOpened = new Date().toISOString();
       } else {
         savedProjects.unshift({
-          path: directory,
-          name: directory.split(/[/\\]/).pop() || directory,
+          path: currentDirectory,
+          name: currentDirectory.split(/[/\\]/).pop() || currentDirectory,
           lastOpened: new Date().toISOString(),
         });
       }
@@ -87,25 +74,16 @@
     currentDirectory = obj.directory;
     comparisonSource = "working";
     comparisonTarget = "HEAD";
-    loadGitDiff(currentDirectory);
+    loadGitDiff();
   }
 
   function handleRefresh() {
-    if (currentDirectory) {
-      loadGitDiff(currentDirectory);
-    }
+    loadGitDiff();
   }
 
   // Watch for changes to comparison settings, untracked toggle, and context size
   $effect(() => {
-    if (currentDirectory) {
-      loadGitDiff(
-        currentDirectory,
-        null,
-        null,
-        null
-      );
-    }
+    loadGitDiff();
   });
 
   onMount(() => {
@@ -116,7 +94,7 @@
     if (savedProjects.length > 0) {
       const lastProject = savedProjects[0];
       currentDirectory = lastProject.path;
-      loadGitDiff(currentDirectory);
+      loadGitDiff();
     }
   });
 </script>
