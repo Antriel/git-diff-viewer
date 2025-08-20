@@ -42,11 +42,7 @@
 
       saveProjectToHistory(currentDirectory);
     } catch (err) {
-      if (err instanceof Error) {
-        error = err.message;
-      } else {
-        error = String(err);
-      }
+      error = err instanceof Error ? err.message : String(err);
       gitDiffResult = null;
     } finally {
       loading = false;
