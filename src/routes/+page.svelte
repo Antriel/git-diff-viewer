@@ -20,6 +20,10 @@
   let comparisonTarget = $state("HEAD");
   let showAbout = $state(false);
 
+  function getSavedProjects() {
+    return JSON.parse(localStorage.getItem("gitDiffProjects") || "[]");
+  }
+
   async function loadGitDiff() {
     if (!currentDirectory) return;
 
@@ -67,9 +71,7 @@
 
   onMount(() => {
     // Load the last opened project
-    const savedProjects = JSON.parse(
-      localStorage.getItem("gitDiffProjects") || "[]"
-    );
+    const savedProjects = getSavedProjects();
     if (savedProjects.length > 0) {
       const lastProject = savedProjects[0];
       currentDirectory = lastProject.path;
@@ -78,9 +80,7 @@
   });
 
   function saveProjectToHistory(directory) {
-    const savedProjects = JSON.parse(
-      localStorage.getItem("gitDiffProjects") || "[]"
-    );
+    const savedProjects = getSavedProjects();
     const existing = savedProjects.find((p) => p.path === directory);
 
     if (existing) {
