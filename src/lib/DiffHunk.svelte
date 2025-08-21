@@ -1,6 +1,9 @@
 <script>
   import hljs from "highlight.js";
   import { invoke } from "@tauri-apps/api/core";
+  import { escapeHtml, parseHunkHeader } from "./utils.js";
+  import FileStats from "./FileStats.svelte";
+  import CodeLine from "./CodeLine.svelte";
 
   let {
     hunk,
@@ -10,25 +13,6 @@
   } = $props();
 
   let renderedLines = $state([]);
-
-  function escapeHtml(str) {
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function parseHunkHeader(header) {
-    const match = header.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-    return match
-      ? {
-          oldStart: parseInt(match[1], 10),
-          newStart: parseInt(match[2], 10),
-        }
-      : { oldStart: 1, newStart: 1 };
-  }
 
   async function openFileInEditor() {
     try {
@@ -63,38 +47,6 @@
       console.warn("Syntax highlighting failed:", error);
       return escapeHtml(content);
     }
-  }
-
-  function formatRelativeTime(isoString) {
-    if (isoString === "unknown") return "unknown";
-
-    const now = new Date();
-    const modifiedDate = new Date(isoString);
-    const diffMs = now.getTime() - modifiedDate.getTime();
-
-    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-    const diffSeconds = Math.floor(diffMs / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-    const diffYears = Math.floor(diffDays / 365);
-
-    if (Math.abs(diffSeconds) < 60) return rtf.format(0, "second");
-    if (Math.abs(diffMinutes) < 60) return rtf.format(-diffMinutes, "minute");
-    if (Math.abs(diffHours) < 24) return rtf.format(-diffHours, "hour");
-    if (Math.abs(diffDays) < 7) return rtf.format(-diffDays, "day");
-    if (Math.abs(diffWeeks) < 4) return rtf.format(-diffWeeks, "week");
-    if (Math.abs(diffMonths) < 12) return rtf.format(-diffMonths, "month");
-    return rtf.format(-diffYears, "year");
-  }
-
-  function formatLocalTime(isoString) {
-    if (isoString === "unknown") return "Unknown";
-    const date = new Date(isoString);
-    return date.toLocaleString();
   }
 
   function renderHunk() {
@@ -182,25 +134,18 @@
         title="Open file in editor">📂</button
       >
     </div>
-    <div class="file-stats">
-      <span class="added">+{hunk.stats.added}</span>
-      <span class="removed">-{hunk.stats.removed}</span>
-      <span class="size">{(hunk.stats.size / 1024).toFixed(1)}KB</span>
-      <span class="modified" title={formatLocalTime(hunk.stats.modified)}
-        >{formatRelativeTime(hunk.stats.modified)}</span
-      >
-    </div>
+    <FileStats stats={hunk.stats} />
   </div>
 
   <div class="code-container">
     <pre class="code"><code
-        >{#each renderedLines as line}<div
-            class="code-line {line.cssClasses.join(' ')}"
-            class:match={line.isMatch}><span class="line-num old"
-              >{line.oldNum}</span
-            ><span class="line-num new">{line.newNum}</span><span
-              class="line-content">{@html line.content}</span
-            ></div>{/each}</code
+        >{#each renderedLines as line}<CodeLine
+            oldNum={line.oldNum}
+            newNum={line.newNum}
+            content={line.content}
+            cssClasses={line.cssClasses}
+            isMatch={line.isMatch}
+          />{/each}</code
       ></pre>
   </div>
 </div>
@@ -272,32 +217,6 @@
     background: #e0e0e0;
   }
 
-  .file-stats {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.85rem;
-    white-space: nowrap;
-  }
-
-  .file-stats .added {
-    color: #28a745;
-    font-weight: bold;
-  }
-
-  .file-stats .removed {
-    color: #dc3545;
-    font-weight: bold;
-  }
-
-  .file-stats .size {
-    color: #666;
-  }
-
-  .file-stats .modified {
-    color: #666;
-    cursor: help;
-  }
-
   .code-container {
     overflow-x: auto;
     overflow-y: hidden;
@@ -308,60 +227,6 @@
     padding: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
       "Liberation Mono", monospace;
-  }
-
-  .code-line {
-    display: flex;
-    align-items: center;
-    line-height: 1;
-  }
-
-  .line-num {
-    flex: 0 0 3em;
-    text-align: right;
-    padding: 0 0.5em;
-    color: #999;
-    user-select: none;
-    background: #f8f9fa;
-    border-right: 1px solid #eee;
-  }
-
-  .line-num.new {
-    border-left: 1px solid #eee;
-  }
-
-  .line-content {
-    flex: 1;
-    padding: 0 0.75em;
-    white-space: pre;
-    word-break: break-all;
-  }
-
-  .code-line.context {
-    background: #fff;
-  }
-
-  .code-line.added {
-    background: #e6ffed;
-  }
-
-  .code-line.removed {
-    background: #ffeef0;
-  }
-
-  .code-line.match {
-    position: relative;
-  }
-
-  .code-line.match::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: #ffd700;
-    z-index: 1;
   }
 
   :global(.highlight) {
@@ -407,32 +272,6 @@
       background: #333;
     }
 
-    .file-stats .size {
-      color: #ccc;
-    }
-
-    .file-stats .modified {
-      color: #ccc;
-    }
-
-    .line-num {
-      background: #333;
-      border-color: #555;
-      color: #999;
-    }
-
-    .code-line.context {
-      background: #2a2a2a;
-    }
-
-    .code-line.added {
-      background: #1f3a2e;
-    }
-
-    .code-line.removed {
-      background: #3a1f1f;
-    }
-
     :global(.highlight) {
       background: #4a4a00;
       color: #ffff88;
@@ -449,14 +288,6 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 0.25rem;
-    }
-
-    .file-stats {
-      justify-content: space-between;
-    }
-
-    .line-num {
-      flex: 0 0 2.5em;
     }
   }
 </style>
