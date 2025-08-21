@@ -1,7 +1,11 @@
 <script>
-  import hljs from "highlight.js";
   import { invoke } from "@tauri-apps/api/core";
-  import { escapeHtml, parseHunkHeader } from "./utils.js";
+  import {
+    escapeHtml,
+    parseHunkHeader,
+    applySyntaxHighlighting,
+    highlightSearchTerm,
+  } from "./utils.js";
   import FileStats from "./FileStats.svelte";
   import CodeLine from "./CodeLine.svelte";
 
@@ -12,6 +16,7 @@
     hunkIndex = 0,
   } = $props();
 
+  let baseLines = $state([]);
   let renderedLines = $state([]);
 
   async function openFileInEditor() {
@@ -29,27 +34,7 @@
     }
   }
 
-  function applySyntaxHighlighting(content, fileName) {
-    // Get file extension for language detection
-    const ext = fileName.split(".").pop()?.toLowerCase();
-    const language = hljs.getLanguage(ext);
-
-    try {
-      if (language) {
-        const result = hljs.highlight(content, { language: ext });
-        return result.value;
-      } else {
-        // Try auto-detection if specific language not found
-        const result = hljs.highlightAuto(content);
-        return result.value;
-      }
-    } catch (error) {
-      console.warn("Syntax highlighting failed:", error);
-      return escapeHtml(content);
-    }
-  }
-
-  function renderHunk() {
+  function buildBaseLines() {
     const lines = hunk.hunk_lines;
     const { oldStart, newStart } = parseHunkHeader(hunk.hunk_header);
     const result = [];
@@ -83,43 +68,62 @@
       if (isAdded) cssClasses.push("added");
       if (isRemoved) cssClasses.push("removed");
 
-      // Apply syntax highlighting first
-      let highlightedContent = applySyntaxHighlighting(content, hunk.file_name);
+      // Apply syntax highlighting once
+      const syntaxHighlighted = applySyntaxHighlighting(
+        content,
+        hunk.file_name
+      );
 
-      // Then apply search term highlighting if needed
-      if ((isAdded || isRemoved) && searchTerm) {
-        const escapedTerm = escapeHtml(searchTerm);
-        const regex = new RegExp(
-          `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-          "gi"
-        );
-        highlightedContent = highlightedContent.replace(
-          regex,
-          '<mark class="highlight">$1</mark>'
-        );
+      result.push({
+        oldNum,
+        newNum,
+        rawContent: line,
+        syntaxHighlighted,
+        cssClasses,
+        isAdded,
+        isRemoved,
+        isContext,
+      });
+    }
+
+    baseLines = result;
+  }
+
+  function applySearchHighlighting() {
+    renderedLines = baseLines.map((baseLine) => {
+      let content = baseLine.syntaxHighlighted;
+
+      // Apply search highlighting if needed
+      if ((baseLine.isAdded || baseLine.isRemoved) && searchTerm) {
+        content = highlightSearchTerm(content, searchTerm);
       }
 
       // Mark as match if line contains search term
       const isMatch =
         searchTerm &&
-        (isAdded || isRemoved) &&
-        line.toLowerCase().includes(searchTerm.toLowerCase());
+        (baseLine.isAdded || baseLine.isRemoved) &&
+        baseLine.rawContent.toLowerCase().includes(searchTerm.toLowerCase());
 
-      result.push({
-        oldNum,
-        newNum,
-        content: highlightedContent,
-        cssClasses,
+      return {
+        oldNum: baseLine.oldNum,
+        newNum: baseLine.newNum,
+        content,
+        cssClasses: baseLine.cssClasses,
         isMatch,
-      });
-    }
-
-    renderedLines = result;
+      };
+    });
   }
 
-  // Re-render when hunk or search term changes
+  // Build base lines when hunk changes
   $effect(() => {
-    renderHunk();
+    buildBaseLines();
+  });
+
+  // Apply search highlighting when search term or base lines change
+  $effect(() => {
+    if (baseLines.length > 0) {
+      applySearchHighlighting();
+    }
   });
 </script>
 

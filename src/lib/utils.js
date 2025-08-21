@@ -56,3 +56,37 @@ export function formatLocalTime(isoString) {
   const date = new Date(isoString);
   return date.toLocaleString();
 }
+
+import hljs from "highlight.js";
+
+export function applySyntaxHighlighting(content, fileName) {
+  try {
+    // Get file extension for language detection
+    const ext = fileName.split(".").pop()?.toLowerCase();
+    const language = hljs.getLanguage(ext);
+
+    if (language) {
+      const highlighted = hljs.highlight(content, { language: ext });
+      return highlighted.value;
+    } else {
+      // Try auto-detection if specific language not found
+      const highlighted = hljs.highlightAuto(content);
+      return highlighted.value;
+    }
+  } catch (error) {
+    console.warn("Syntax highlighting failed:", error);
+    return escapeHtml(content);
+  }
+}
+
+export function highlightSearchTerm(content, searchTerm) {
+  if (!searchTerm) return content;
+
+  const escapedTerm = escapeHtml(searchTerm);
+  const regex = new RegExp(
+    `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+    "gi"
+  );
+
+  return content.replace(regex, '<mark class="highlight">$1</mark>');
+}
