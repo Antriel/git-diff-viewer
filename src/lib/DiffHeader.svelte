@@ -38,6 +38,46 @@
     updateContextSize(newSize);
   }
 
+  let isDragging = $state(false);
+  let dragStartY = 0;
+  let dragStartValue = 0;
+
+  function handleMouseDown(event) {
+    isDragging = true;
+    dragStartY = event.clientY;
+    dragStartValue = displayContextSize;
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    event.preventDefault();
+  }
+
+  function handleMouseMove(event) {
+    if (!isDragging) return;
+    const deltaY = dragStartY - event.clientY;
+    const steps = Math.floor(deltaY / 10);
+    const newSize = Math.max(0, dragStartValue + steps);
+    if (newSize !== displayContextSize) {
+      displayContextSize = newSize;
+      isUpdating = true;
+    }
+  }
+
+  function handleMouseUp() {
+    if (isDragging && displayContextSize !== contextSize) {
+      contextSize = displayContextSize;
+    }
+    isDragging = false;
+    isUpdating = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  }
+
+  function handleWheel(event) {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? -1 : 1;
+    adjustContext(delta);
+  }
+
   $effect(() => {
     displayContextSize = contextSize;
     isUpdating = false;
@@ -69,11 +109,18 @@
     </div>
     <div class="context-controls">
       <span>Context:</span>
-      <button onclick={() => adjustContext(-1)} disabled={displayContextSize === 0}
-        >-</button
+      <button
+        onclick={() => adjustContext(-3)}
+        disabled={displayContextSize === 0}>-</button
       >
-      <span class="context-size" class:updating={isUpdating}>{displayContextSize}</span>
-      <button onclick={() => adjustContext(1)}>+</button>
+      <span
+        class="context-size"
+        class:updating={isUpdating}
+        class:dragging={isDragging}
+        onmousedown={handleMouseDown}
+        onwheel={handleWheel}>{displayContextSize}</span
+      >
+      <button onclick={() => adjustContext(3)}>+</button>
     </div>
     <button onclick={() => onRefresh()} class="refresh-btn" title="Refresh">
       🔄
@@ -186,10 +233,23 @@
     text-align: center;
     font-weight: bold;
     transition: opacity 0.2s;
+    cursor: ns-resize;
+    user-select: none;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+  }
+
+  .context-size:hover {
+    background: rgba(0, 0, 0, 0.05);
   }
 
   .context-size.updating {
     opacity: 0.6;
+  }
+
+  .context-size.dragging {
+    background: rgba(0, 0, 0, 0.1);
+    cursor: ns-resize;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -232,6 +292,14 @@
 
     .context-controls button:hover:not(:disabled) {
       background: #555;
+    }
+
+    .context-size:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .context-size.dragging {
+      background: rgba(255, 255, 255, 0.1);
     }
   }
 </style>
