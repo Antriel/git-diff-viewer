@@ -15,9 +15,33 @@
     onRefresh = () => {},
   } = $props();
 
-  function adjustContext(delta) {
-    contextSize = Math.max(0, contextSize + delta);
+  let displayContextSize = $state(contextSize);
+  let isUpdating = $state(false);
+
+  function debounce(fn, ms) {
+    let timeoutId;
+    return (...args) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), ms);
+    };
   }
+
+  const updateContextSize = debounce((newSize) => {
+    contextSize = newSize;
+    isUpdating = false;
+  }, 300);
+
+  function adjustContext(delta) {
+    const newSize = Math.max(0, displayContextSize + delta);
+    displayContextSize = newSize;
+    isUpdating = true;
+    updateContextSize(newSize);
+  }
+
+  $effect(() => {
+    displayContextSize = contextSize;
+    isUpdating = false;
+  });
 </script>
 
 <div class="diff-header">
@@ -45,10 +69,10 @@
     </div>
     <div class="context-controls">
       <span>Context:</span>
-      <button onclick={() => adjustContext(-1)} disabled={contextSize === 0}
+      <button onclick={() => adjustContext(-1)} disabled={displayContextSize === 0}
         >-</button
       >
-      <span class="context-size">{contextSize}</span>
+      <span class="context-size" class:updating={isUpdating}>{displayContextSize}</span>
       <button onclick={() => adjustContext(1)}>+</button>
     </div>
     <button onclick={() => onRefresh()} class="refresh-btn" title="Refresh">
@@ -161,6 +185,11 @@
     min-width: 1.5rem;
     text-align: center;
     font-weight: bold;
+    transition: opacity 0.2s;
+  }
+
+  .context-size.updating {
+    opacity: 0.6;
   }
 
   @media (prefers-color-scheme: dark) {
