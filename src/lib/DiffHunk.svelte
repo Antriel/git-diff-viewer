@@ -16,7 +16,7 @@
 
   let baseLines = $state([]);
   let renderedLines = $state([]);
-  let codeElement;
+  let codeElement = $state();
   let markInstance;
   let selectedText = $state("");
   let hunkElement;
