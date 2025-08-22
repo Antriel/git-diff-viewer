@@ -3,7 +3,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::process::Stdio;
-use tauri::command;
+use tauri::{command, Manager};
+use tauri_plugin_window_state::{AppHandleExt, WindowExt, StateFlags};
 use tokio::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -520,6 +521,25 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .setup(|app| {
+            #[cfg(desktop)]
+            {
+                // Restore window state for all windows
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.restore_state(StateFlags::all());
+                    
+                    // Set up window close handler to save state
+                    let app_handle = app.handle().clone();
+                    window.on_window_event(move |event| {
+                        if let tauri::WindowEvent::CloseRequested { .. } = event {
+                            let _ = app_handle.save_window_state(StateFlags::all());
+                        }
+                    });
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_git_diff,
             get_git_refs,
