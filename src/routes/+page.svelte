@@ -91,6 +91,9 @@
   }
 
   onMount(() => {
+    // Enable transitions, postponed until now to prevent initial flash
+    document.body.classList.add("transitions-enabled");
+    
     // Set up theme detection
     updateAppliedTheme();
 
@@ -233,7 +236,7 @@
     overflow-y: scroll;
   }
 
-  :global(*) {
+  :global(transitions-enabled *) {
     transition:
       background-color 0.5s ease,
       color 0.5s ease,
