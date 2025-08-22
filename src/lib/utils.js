@@ -79,14 +79,3 @@ export function applySyntaxHighlighting(content, fileName) {
   }
 }
 
-export function highlightSearchTerm(content, searchTerm) {
-  if (!searchTerm) return content;
-
-  const escapedTerm = escapeHtml(searchTerm);
-  const regex = new RegExp(
-    `(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-    "gi"
-  );
-
-  return content.replace(regex, '<mark class="highlight">$1</mark>');
-}

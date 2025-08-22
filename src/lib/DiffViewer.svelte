@@ -54,7 +54,7 @@
     </div>
   {:else}
     <div>
-      {#each filteredHunks as hunk, index}
+      {#each filteredHunks as hunk, index (hunk)}
         <DiffHunk {hunk} {searchTerm} {currentDirectory} hunkIndex={index} />
       {/each}
     </div>

@@ -1,13 +1,10 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
-  import {
-    escapeHtml,
-    parseHunkHeader,
-    applySyntaxHighlighting,
-    highlightSearchTerm,
-  } from "./utils.js";
+  import { parseHunkHeader, applySyntaxHighlighting } from "./utils.js";
   import FileStats from "./FileStats.svelte";
   import CodeLine from "./CodeLine.svelte";
+  import Mark from "mark.js";
+  import { tick } from "svelte";
 
   let {
     hunk,
@@ -18,6 +15,8 @@
 
   let baseLines = $state([]);
   let renderedLines = $state([]);
+  let codeElement;
+  let markInstance;
 
   async function openFileInEditor() {
     try {
@@ -89,16 +88,39 @@
     baseLines = result;
   }
 
+  async function applyMarkJsHighlighting() {
+    if (!codeElement) return;
+
+    // Find all line-content elements within added/removed lines
+    const lineContents = codeElement.querySelectorAll(
+      ".code-line.added .line-content, .code-line.removed .line-content"
+    );
+
+    if (lineContents.length === 0) return;
+
+    // Clean up previous mark instance if it exists
+    if (markInstance) {
+      await new Promise((resolve) => {
+        markInstance.unmark({ done: resolve });
+      });
+    }
+
+    // Create fresh mark instance and apply highlighting
+    markInstance = new Mark(lineContents);
+
+    if (searchTerm) {
+      markInstance.mark(searchTerm, {
+        element: "mark",
+        className: "highlight",
+        acrossElements: true,
+        separateWordSearch: false,
+      });
+    }
+  }
+
   function applySearchHighlighting() {
+    // Check for matches and set isMatch appropriately
     renderedLines = baseLines.map((baseLine) => {
-      let content = baseLine.syntaxHighlighted;
-
-      // Apply search highlighting if needed
-      if ((baseLine.isAdded || baseLine.isRemoved) && searchTerm) {
-        content = highlightSearchTerm(content, searchTerm);
-      }
-
-      // Mark as match if line contains search term
       const isMatch =
         searchTerm &&
         (baseLine.isAdded || baseLine.isRemoved) &&
@@ -107,7 +129,7 @@
       return {
         oldNum: baseLine.oldNum,
         newNum: baseLine.newNum,
-        content,
+        content: baseLine.syntaxHighlighted,
         cssClasses: baseLine.cssClasses,
         isMatch,
       };
@@ -123,6 +145,15 @@
   $effect(() => {
     if (baseLines.length > 0) {
       applySearchHighlighting();
+    }
+  });
+
+  // Apply mark.js highlighting after DOM updates
+  $effect(() => {
+    if (renderedLines.length > 0 && codeElement) {
+      tick().then(() => {
+        applyMarkJsHighlighting();
+      });
     }
   });
 </script>
@@ -142,8 +173,8 @@
   </div>
 
   <div class="code-container">
-    <pre class="code"><code
-        >{#each renderedLines as line}<CodeLine
+    <pre class="code"><code bind:this={codeElement}
+        >{#each renderedLines as line, i}<CodeLine
             oldNum={line.oldNum}
             newNum={line.newNum}
             content={line.content}
