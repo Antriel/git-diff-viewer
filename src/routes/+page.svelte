@@ -230,6 +230,14 @@
     overflow-y: scroll;
   }
 
+  :global(*) {
+    transition:
+      background-color 0.5s ease,
+      color 0.5s ease,
+      border-color 0.5s ease,
+      box-shadow 0.5s ease;
+  }
+
   :global(body.dark-theme) {
     /* Base colors */
     --bg-color: #1a1a1a;
