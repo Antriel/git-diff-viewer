@@ -75,26 +75,23 @@ jobs:
           
           # Generate changelog
           if [ -n "$LATEST_TAG" ]; then
-            echo "## What's Changed" > release_notes.md
-            echo "" >> release_notes.md
-            git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD >> release_notes.md
-            echo "" >> release_notes.md
-            echo "" >> release_notes.md
-            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}" >> release_notes.md
+            NOTES="## What's Changed
+          
+          $(git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}"
           else
-            echo "## What's Changed" > release_notes.md
-            echo "" >> release_notes.md
-            echo "Initial release of Git Diff Viewer!" >> release_notes.md
-            echo "" >> release_notes.md
-            git log --pretty=format:"- %s (%h)" >> release_notes.md
+            NOTES="## What's Changed
+          
+          Initial release of Git Diff Viewer!
+          
+          $(git log --pretty=format:"- %s (%h)")"
           fi
           
-          # Set output
-          {
-            echo 'notes<<EOF'
-            cat release_notes.md
-            echo EOF
-          } >> $GITHUB_OUTPUT
+          # Set output using simpler approach
+          echo "notes<<EOFMARKER" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOFMARKER" >> $GITHUB_OUTPUT
 
       - name: Build Tauri app (with release)
         if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
