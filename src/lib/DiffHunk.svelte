@@ -19,6 +19,9 @@
   let codeElement;
   let markInstance;
   let selectedText = $state("");
+  let hunkElement;
+  let isVisible = $state(false);
+  let observer;
 
   async function openFileInEditor() {
     try {
@@ -191,37 +194,64 @@
     });
   }
 
-  // Build base lines when hunk changes
+  // Set up intersection observer for lazy loading
   $effect(() => {
-    buildBaseLines();
+    if (hunkElement && !observer) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry.isIntersecting && !isVisible) {
+            isVisible = true;
+            // Trigger highlighting when becoming visible
+            buildBaseLines();
+          }
+        },
+        { threshold: 0.1, rootMargin: "100px" }
+      );
+      observer.observe(hunkElement);
+    }
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+    };
   });
 
-  // Apply search highlighting when search term or base lines change
+  // Build base lines when hunk changes (only if visible)
   $effect(() => {
-    if (baseLines.length > 0) {
+    if (isVisible) {
+      buildBaseLines();
+    }
+  });
+
+  // Apply search highlighting when search term or base lines change (only if visible)
+  $effect(() => {
+    if (isVisible && baseLines.length > 0) {
       applySearchHighlighting();
     }
   });
 
-  // Apply mark.js highlighting after DOM updates
+  // Apply mark.js highlighting after DOM updates (only if visible)
   $effect(() => {
-    if (renderedLines.length > 0 && codeElement) {
+    if (isVisible && renderedLines.length > 0 && codeElement) {
       tick().then(() => {
         applyMarkJsHighlighting();
       });
     }
   });
 
-  // Apply highlighting when selected text changes
+  // Apply highlighting when selected text changes (only if visible)
   $effect(() => {
     selectedText; // Explicitly depend on selectedText
-    if (codeElement) {
+    if (isVisible && codeElement) {
       applyMarkJsHighlighting();
     }
   });
 </script>
 
-<div class="hunk">
+<div class="hunk" bind:this={hunkElement}>
   <div class="hunk-header">
     <div class="file-info">
       <strong class="file-name">{hunk.file_name}</strong>
@@ -236,18 +266,22 @@
   </div>
 
   <div class="code-container">
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-    <pre class="code"><code
-        bind:this={codeElement}
-        onmouseup={handleTextSelection}
-        >{#each renderedLines as line, i}<CodeLine
-            oldNum={line.oldNum}
-            newNum={line.newNum}
-            content={line.content}
-            cssClasses={line.cssClasses}
-            isMatch={line.isMatch}
-          />{/each}</code
-      ></pre>
+    {#if isVisible}
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <pre class="code"><code
+          bind:this={codeElement}
+          onmouseup={handleTextSelection}
+          >{#each renderedLines as line, i}<CodeLine
+              oldNum={line.oldNum}
+              newNum={line.newNum}
+              content={line.content}
+              cssClasses={line.cssClasses}
+              isMatch={line.isMatch}
+            />{/each}</code
+        ></pre>
+    {:else}
+      <div class="placeholder">Loading...</div>
+    {/if}
   </div>
 </div>
 
@@ -317,6 +351,13 @@
   .code-container {
     overflow-x: auto;
     overflow-y: hidden;
+  }
+
+  .placeholder {
+    padding: 2rem;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
   }
 
   .code {
