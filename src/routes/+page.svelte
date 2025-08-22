@@ -12,15 +12,15 @@
   let gitDiffResult = $state(null);
   let loading = $state(false);
   let error = $state("");
-  let currentContextSize = $state(3);
+  let currentContextSize = $state(parseInt(localStorage.getItem("gitDiffContextSize") || "3", 10));
   let searchTerm = $state("");
   let visibleCount = $state(0);
   let totalCount = $state(0);
-  let includeUntracked = $state(false);
+  let includeUntracked = $state(localStorage.getItem("gitDiffIncludeUntracked") === "true");
   let comparisonSource = $state("working");
   let comparisonTarget = $state("HEAD");
   let showAbout = $state(false);
-  let theme = $state("auto");
+  let theme = $state(localStorage.getItem("gitDiffTheme") || "auto");
   let appliedTheme = $state("light");
 
   function getSavedProjects() {
@@ -66,6 +66,8 @@
   // Watch for changes to comparison settings, untracked toggle, and context size
   $effect(() => {
     loadGitDiff();
+    localStorage.setItem("gitDiffContextSize", currentContextSize.toString());
+    localStorage.setItem("gitDiffIncludeUntracked", includeUntracked.toString());
   });
 
   function updateAppliedTheme() {
@@ -119,6 +121,7 @@
   $effect(() => {
     updateAppliedTheme();
     applyThemeToBody();
+    localStorage.setItem("gitDiffTheme", theme);
   });
 
   function saveProjectToHistory(directory) {
