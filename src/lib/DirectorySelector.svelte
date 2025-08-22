@@ -5,6 +5,7 @@
 
   let recentProjects = $state([]);
   let showRecent = $state(false);
+  let dropdownRef = $state();
 
   async function selectDirectory() {
     try {
@@ -45,9 +46,27 @@
     return "..." + path.slice(-(maxLength - 3));
   }
 
+  function handleClickOutside(event) {
+    if (dropdownRef && !dropdownRef.contains(event.target) && showRecent) {
+      showRecent = false;
+    }
+  }
+
   $effect(() => {
     // Load recent projects when component mounts
     loadRecentProjects();
+  });
+
+  $effect(() => {
+    if (showRecent) {
+      document.addEventListener('click', handleClickOutside);
+    } else {
+      document.removeEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
   });
 </script>
 
@@ -69,7 +88,7 @@
     </button>
 
     {#if recentProjects.length > 0}
-      <div class="recent-dropdown">
+      <div class="recent-dropdown" bind:this={dropdownRef}>
         <button onclick={toggleRecent} class="secondary"> Recent ▼ </button>
 
         {#if showRecent}
