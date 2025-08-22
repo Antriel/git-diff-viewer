@@ -54,7 +54,15 @@ export function formatRelativeTime(isoString) {
 export function formatLocalTime(isoString) {
   if (isoString === "unknown") return "Unknown";
   const date = new Date(isoString);
-  return date.toLocaleString();
+  return date.toLocaleString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
 }
 
 import hljs from "highlight.js";

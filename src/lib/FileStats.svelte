@@ -8,7 +8,7 @@
   <span class="added">+{stats.added}</span>
   <span class="removed">-{stats.removed}</span>
   <span class="size">{(stats.size / 1024).toFixed(1)}KB</span>
-  <span class="modified" title={formatLocalTime(stats.modified)}
+  <span class="modified" title={'Last modified: '+formatLocalTime(stats.modified)}
     >{formatRelativeTime(stats.modified)}</span
   >
 </div>
