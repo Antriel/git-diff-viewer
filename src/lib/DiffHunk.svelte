@@ -186,11 +186,6 @@
 </div>
 
 <style>
-  /* Import highlight.js themes using CSS @import for better control */
-  @import "highlight.js/styles/github.css" screen and
-    (prefers-color-scheme: light);
-  @import "highlight.js/styles/github-dark.css" screen and
-    (prefers-color-scheme: dark);
   .hunk {
     border: 1px solid var(--border-light);
     margin: 1rem 0;

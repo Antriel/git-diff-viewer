@@ -6,6 +6,10 @@
   import DirectorySelector from "../lib/DirectorySelector.svelte";
   import AboutModal from "../lib/AboutModal.svelte";
   import ThemeToggle from "../lib/ThemeToggle.svelte";
+  
+  // Import highlight.js CSS as URLs - Vite will handle bundling
+  import githubLightCss from 'highlight.js/styles/github.css?url';
+  import githubDarkCss from 'highlight.js/styles/github-dark.css?url';
 
   let currentDirectory = $state("");
   /** @type {any} */
@@ -79,6 +83,22 @@
     }
   }
 
+  function updateHighlightTheme(theme) {
+    // Remove existing highlight.js stylesheet
+    const existingLink = document.querySelector('link[data-highlight-theme]');
+    if (existingLink) {
+      existingLink.remove();
+    }
+    
+    // Add new highlight.js stylesheet using imported URLs
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    // Use Vite-processed URLs - works in both dev and production
+    link.href = theme === 'dark' ? githubDarkCss : githubLightCss;
+    link.setAttribute('data-highlight-theme', theme);
+    document.head.appendChild(link);
+  }
+
   function applyThemeToBody() {
     // Remove existing theme classes
     document.body.classList.remove("dark-theme", "light-theme");
@@ -88,6 +108,9 @@
     } else {
       document.body.classList.add("light-theme");
     }
+    
+    // Update highlight.js theme
+    updateHighlightTheme(appliedTheme);
   }
 
   onMount(() => {
@@ -96,6 +119,7 @@
     
     // Set up theme detection
     updateAppliedTheme();
+    applyThemeToBody();
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
