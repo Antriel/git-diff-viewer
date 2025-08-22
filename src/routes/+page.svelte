@@ -6,22 +6,26 @@
   import DirectorySelector from "../lib/DirectorySelector.svelte";
   import AboutModal from "../lib/AboutModal.svelte";
   import ThemeToggle from "../lib/ThemeToggle.svelte";
-  
+
   // Import highlight.js CSS as URLs - Vite will handle bundling
-  import githubLightCss from 'highlight.js/styles/github.css?url';
-  import githubDarkCss from 'highlight.js/styles/github-dark.css?url';
+  import githubLightCss from "highlight.js/styles/github.css?url";
+  import githubDarkCss from "highlight.js/styles/github-dark.css?url";
 
   let currentDirectory = $state("");
   /** @type {any} */
   let gitDiffResult = $state(null);
   let loading = $state(false);
   let error = $state("");
-  let currentContextSize = $state(parseInt(localStorage.getItem("gitDiffContextSize") || "3", 10));
+  let currentContextSize = $state(
+    parseInt(localStorage.getItem("gitDiffContextSize") || "3", 10)
+  );
   let searchTerm = $state("");
   let searchMode = $state(localStorage.getItem("gitDiffSearchMode") || "both");
   let visibleCount = $state(0);
   let totalCount = $state(0);
-  let includeUntracked = $state(localStorage.getItem("gitDiffIncludeUntracked") === "true");
+  let includeUntracked = $state(
+    localStorage.getItem("gitDiffIncludeUntracked") === "true"
+  );
   let comparisonSource = $state("working");
   let comparisonTarget = $state("HEAD");
   let showAbout = $state(false);
@@ -72,7 +76,10 @@
   $effect(() => {
     loadGitDiff();
     localStorage.setItem("gitDiffContextSize", currentContextSize.toString());
-    localStorage.setItem("gitDiffIncludeUntracked", includeUntracked.toString());
+    localStorage.setItem(
+      "gitDiffIncludeUntracked",
+      includeUntracked.toString()
+    );
   });
 
   function updateAppliedTheme() {
@@ -86,17 +93,17 @@
 
   function updateHighlightTheme(theme) {
     // Remove existing highlight.js stylesheet
-    const existingLink = document.querySelector('link[data-highlight-theme]');
+    const existingLink = document.querySelector("link[data-highlight-theme]");
     if (existingLink) {
       existingLink.remove();
     }
-    
+
     // Add new highlight.js stylesheet using imported URLs
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
     // Use Vite-processed URLs - works in both dev and production
-    link.href = theme === 'dark' ? githubDarkCss : githubLightCss;
-    link.setAttribute('data-highlight-theme', theme);
+    link.href = theme === "dark" ? githubDarkCss : githubLightCss;
+    link.setAttribute("data-highlight-theme", theme);
     document.head.appendChild(link);
   }
 
@@ -109,7 +116,7 @@
     } else {
       document.body.classList.add("light-theme");
     }
-    
+
     // Update highlight.js theme
     updateHighlightTheme(appliedTheme);
   }
@@ -117,7 +124,7 @@
   onMount(() => {
     // Enable transitions, postponed until now to prevent initial flash
     document.body.classList.add("transitions-enabled");
-    
+
     // Set up theme detection
     updateAppliedTheme();
     applyThemeToBody();
@@ -316,6 +323,11 @@
     /* Border colors */
     --border-light: #555;
     --border-medium: #666;
+
+    /* Highlight colors */
+    --highlight-bg: #3a3a1a;
+    --highlight-text: #ffeb3b;
+    --word-highlight-bg: rgba(255, 255, 0, 0.2);
   }
 
   :global(body.light-theme) {
@@ -358,6 +370,11 @@
     /* Border colors */
     --border-light: #dee2e6;
     --border-medium: #adb5bd;
+
+    /* Highlight colors */
+    --highlight-bg: #fff3cd;
+    --highlight-text: #856404;
+    --word-highlight-bg: rgba(255, 255, 0, 0.15);
   }
 
   .container {

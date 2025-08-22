@@ -18,6 +18,7 @@
   let renderedLines = $state([]);
   let codeElement;
   let markInstance;
+  let selectedText = $state("");
 
   async function openFileInEditor() {
     try {
@@ -31,6 +32,23 @@
     } catch (error) {
       console.error("Failed to open file in editor:", error);
       alert(`Failed to open file: ${error}`);
+    }
+  }
+
+  function handleTextSelection() {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim();
+
+    if (text && text.length > 0) {
+      // If selecting the same text, deselect it
+      if (selectedText === text) {
+        selectedText = "";
+        selection?.removeAllRanges();
+      } else {
+        selectedText = text;
+      }
+    } else {
+      selectedText = "";
     }
   }
 
@@ -92,21 +110,6 @@
   async function applyMarkJsHighlighting() {
     if (!codeElement) return;
 
-    // Find line-content elements based on search mode
-    let selector = "";
-    if (searchMode === "added") {
-      selector = ".code-line.added .line-content";
-    } else if (searchMode === "removed") {
-      selector = ".code-line.removed .line-content";
-    } else {
-      selector =
-        ".code-line.added .line-content, .code-line.removed .line-content";
-    }
-
-    const lineContents = codeElement.querySelectorAll(selector);
-
-    if (lineContents.length === 0) return;
-
     // Clean up previous mark instance if it exists
     if (markInstance) {
       await new Promise((resolve) => {
@@ -114,15 +117,44 @@
       });
     }
 
-    // Create fresh mark instance and apply highlighting
-    markInstance = new Mark(lineContents);
+    // Create fresh mark instance on the entire code element
+    markInstance = new Mark(codeElement);
 
+    const excludeSelectors = [".line-num"];
+
+    // Apply search term highlighting (only on added/removed based on search mode)
     if (searchTerm) {
-      markInstance.mark(searchTerm, {
+      let selector = "";
+      if (searchMode === "added") {
+        selector = ".code-line.added .line-content";
+      } else if (searchMode === "removed") {
+        selector = ".code-line.removed .line-content";
+      } else {
+        selector =
+          ".code-line.added .line-content, .code-line.removed .line-content";
+      }
+
+      const lineContents = codeElement.querySelectorAll(selector);
+      if (lineContents.length > 0) {
+        const searchMarkInstance = new Mark(lineContents);
+        searchMarkInstance.mark(searchTerm, {
+          element: "mark",
+          className: "highlight",
+          acrossElements: true,
+          separateWordSearch: false,
+          exclude: excludeSelectors,
+        });
+      }
+    }
+
+    // Apply selected text highlighting (on all lines)
+    if (selectedText) {
+      markInstance.mark(selectedText, {
         element: "mark",
-        className: "highlight",
+        className: "word-highlight",
         acrossElements: true,
         separateWordSearch: false,
+        exclude: excludeSelectors,
       });
     }
   }
@@ -179,6 +211,14 @@
       });
     }
   });
+
+  // Apply highlighting when selected text changes
+  $effect(() => {
+    selectedText; // Explicitly depend on selectedText
+    if (codeElement) {
+      applyMarkJsHighlighting();
+    }
+  });
 </script>
 
 <div class="hunk">
@@ -196,7 +236,10 @@
   </div>
 
   <div class="code-container">
-    <pre class="code"><code bind:this={codeElement}
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <pre class="code"><code
+        bind:this={codeElement}
+        onmouseup={handleTextSelection}
         >{#each renderedLines as line, i}<CodeLine
             oldNum={line.oldNum}
             newNum={line.newNum}
@@ -284,10 +327,15 @@
   }
 
   :global(.highlight) {
-    background: #fff3cd;
-    color: #856404;
+    background: var(--highlight-bg);
+    color: var(--highlight-text);
     font-weight: bold;
     padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  :global(.word-highlight) {
+    background: var(--word-highlight-bg);
     border-radius: 2px;
   }
 
