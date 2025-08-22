@@ -19,14 +19,14 @@
     flex: 0 0 3em;
     text-align: right;
     padding: 0 0.5em;
-    color: #999;
+    color: var(--text-muted);
     user-select: none;
-    background: #f8f9fa;
-    border-right: 1px solid #eee;
+    background: var(--line-num-bg);
+    border-right: 1px solid var(--border-light);
   }
 
   .line-num.new {
-    border-left: 1px solid #eee;
+    border-left: 1px solid var(--border-light);
   }
 
   .line-content {
@@ -37,15 +37,15 @@
   }
 
   .code-line.context {
-    background: #fff;
+    background: var(--context-bg);
   }
 
   .code-line.added {
-    background: #e6ffed;
+    background: var(--added-bg);
   }
 
   .code-line.removed {
-    background: #ffeef0;
+    background: var(--removed-bg);
   }
 
   .code-line.match {
@@ -61,26 +61,6 @@
     width: 3px;
     background: #ffd700;
     z-index: 1;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .line-num {
-      background: #333;
-      border-color: #555;
-      color: #999;
-    }
-
-    .code-line.context {
-      background: #2a2a2a;
-    }
-
-    .code-line.added {
-      background: #1f3a2e;
-    }
-
-    .code-line.removed {
-      background: #3a1f1f;
-    }
   }
 
   @media (max-width: 768px) {

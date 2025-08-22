@@ -75,9 +75,9 @@
   }
 
   .about-btn {
-    background: #666;
-    color: white;
-    border: none;
+    background: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-light);
     padding: 0.4rem 0.8rem;
     border-radius: 6px;
     cursor: pointer;
@@ -87,7 +87,7 @@
   }
 
   .about-btn:hover {
-    background: #555;
+    background: var(--button-bg-hover);
   }
 
   .modal-overlay {
@@ -104,7 +104,8 @@
   }
 
   .modal-content {
-    background: white;
+    background: var(--modal-bg);
+    color: var(--text-color);
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     max-width: 500px;
@@ -124,7 +125,7 @@
 
   .modal-header h2 {
     margin: 0;
-    color: #333;
+    color: var(--text-color);
     font-size: 1.4rem;
   }
 
@@ -133,14 +134,14 @@
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    color: #666;
+    color: var(--text-muted);
     padding: 0.2rem 0.5rem;
     border-radius: 4px;
   }
 
   .close-btn:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--component-bg-hover);
+    color: var(--text-color);
   }
 
   .modal-body {
@@ -168,21 +169,21 @@
 
   .label {
     font-weight: 600;
-    color: #333;
+    color: var(--text-color);
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
   .value {
-    color: #555;
+    color: var(--text-muted);
     font-size: 0.95rem;
   }
 
   .link-btn {
     background: none;
     border: none;
-    color: #0066cc;
+    color: var(--link-color);
     cursor: pointer;
     padding: 0;
     text-align: left;
@@ -192,18 +193,19 @@
   }
 
   .link-btn:hover {
-    color: #0052a3;
+    color: var(--link-color);
+    opacity: 0.8;
   }
 
   .description {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-light);
   }
 
   .description-text {
     margin: 0.5rem 0 0 0;
-    color: #555;
+    color: var(--text-muted);
     line-height: 1.5;
     font-size: 0.95rem;
   }
@@ -213,8 +215,8 @@
   }
 
   .repo-btn {
-    background: #0066cc;
-    color: white;
+    background: var(--link-color);
+    color: var(--bg-color);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
@@ -226,7 +228,8 @@
   }
 
   .repo-btn:hover {
-    background: #0052a3;
+    background: var(--link-color);
+    opacity: 0.9;
     transform: translateY(-1px);
   }
 
@@ -234,56 +237,6 @@
     .info-grid {
       grid-template-columns: 1fr;
       gap: 1rem;
-    }
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .modal-content {
-      background: #2a2a2a;
-      color: #f6f6f6;
-    }
-
-    .modal-header h2 {
-      color: #f6f6f6;
-    }
-
-    .close-btn {
-      color: #ccc;
-    }
-
-    .close-btn:hover {
-      background: #3a3a3a;
-      color: #f6f6f6;
-    }
-
-    .label {
-      color: #f6f6f6;
-    }
-
-    .value,
-    .description-text {
-      color: #ccc;
-    }
-
-    .link-btn {
-      color: #66b3ff;
-    }
-
-    .link-btn:hover {
-      color: #99ccff;
-    }
-
-    .description {
-      border-color: #444;
-    }
-
-    .repo-btn {
-      background: #66b3ff;
-      color: #1a1a1a;
-    }
-
-    .repo-btn:hover {
-      background: #99ccff;
     }
   }
 </style>

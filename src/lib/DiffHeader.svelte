@@ -44,9 +44,9 @@
 
 <style>
   .diff-header {
-    background: #f8f9fa;
+    background: var(--component-bg);
     padding: 1rem;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-light);
     border-radius: 8px;
     margin-bottom: 0;
   }
@@ -59,33 +59,17 @@
   }
 
   .refresh-btn {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background: var(--button-bg);
+    border: 1px solid var(--button-border);
     border-radius: 6px;
     padding: 0.5rem;
     cursor: pointer;
     font-size: 1rem;
     transition: all 0.2s;
+    color: var(--text-color);
   }
 
   .refresh-btn:hover {
-    background: #e9ecef;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .diff-header {
-      background: #333;
-      border-color: #555;
-    }
-
-    .refresh-btn {
-      background: #444;
-      border-color: #666;
-      color: #f6f6f6;
-    }
-
-    .refresh-btn:hover {
-      background: #555;
-    }
+    background: var(--button-bg-hover);
   }
 </style>

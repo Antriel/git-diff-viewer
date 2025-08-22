@@ -192,17 +192,17 @@
   @import "highlight.js/styles/github-dark.css" screen and
     (prefers-color-scheme: dark);
   .hunk {
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
     margin: 1rem 0;
     border-radius: 8px;
     overflow: hidden;
-    background: white;
+    background: var(--component-bg);
   }
 
   .hunk-header {
-    background: #fafafa;
+    background: var(--header-bg);
     padding: 0.75rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -219,37 +219,38 @@
   }
 
   .file-name {
-    color: #333;
+    color: var(--text-color);
     word-break: break-all;
   }
 
   .hunk-location {
     font-family: monospace;
-    color: #666;
-    background: #f0f0f0;
+    color: var(--text-muted);
+    background: var(--component-bg-hover);
     padding: 0.2rem 0.4rem;
     border-radius: 3px;
   }
 
   .open-file-btn {
     background: none;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-light);
     border-radius: 4px;
     padding: 0.25rem 0.5rem;
     cursor: pointer;
-    color: #666;
+    color: var(--text-muted);
     transition: all 0.2s ease;
     margin-left: 0.5rem;
   }
 
   .open-file-btn:hover {
-    background: #f0f0f0;
-    border-color: #999;
-    color: #333;
+    background: var(--component-bg-hover);
+    border-color: var(--border-medium);
+    color: var(--text-color);
   }
 
   .open-file-btn:active {
-    background: #e0e0e0;
+    background: var(--component-bg-hover);
+    opacity: 0.8;
   }
 
   .code-container {
@@ -270,47 +271,6 @@
     font-weight: bold;
     padding: 0 2px;
     border-radius: 2px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .hunk {
-      background: #2a2a2a;
-      border-color: #555;
-    }
-
-    .hunk-header {
-      background: #333;
-      border-color: #555;
-    }
-
-    .file-name {
-      color: #f6f6f6;
-    }
-
-    .hunk-location {
-      background: #444;
-      color: #ccc;
-    }
-
-    .open-file-btn {
-      border-color: #555;
-      color: #ccc;
-    }
-
-    .open-file-btn:hover {
-      background: #444;
-      border-color: #777;
-      color: #f6f6f6;
-    }
-
-    .open-file-btn:active {
-      background: #333;
-    }
-
-    :global(.highlight) {
-      background: #4a4a00;
-      color: #ffff88;
-    }
   }
 
   @media (max-width: 768px) {

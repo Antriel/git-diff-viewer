@@ -137,14 +137,14 @@
 <style>
   .comparison-controls {
     margin-top: 1rem;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     overflow: hidden;
   }
 
   .comparison-header {
     padding: 0.75rem 1rem;
-    background: #f8f9fa;
+    background: var(--header-bg);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -154,7 +154,7 @@
   }
 
   .comparison-header:hover {
-    background: #e9ecef;
+    background: var(--component-bg-hover);
   }
 
   .comparison-summary {
@@ -165,17 +165,17 @@
   }
 
   .comparison-label {
-    color: #6c757d;
+    color: var(--text-muted);
   }
 
   .vs {
-    color: #6c757d;
+    color: var(--text-muted);
     font-style: italic;
   }
 
   .expand-icon {
     font-size: 0.7rem;
-    color: #6c757d;
+    color: var(--text-muted);
     transition: transform 0.2s;
   }
 
@@ -185,8 +185,8 @@
 
   .comparison-details {
     padding: 1rem;
-    background: #fff;
-    border-top: 1px solid #dee2e6;
+    background: var(--bg-color);
+    border-top: 1px solid var(--border-color);
   }
 
   .comparison-row {
@@ -206,20 +206,21 @@
   .comparison-field label {
     font-size: 0.8rem;
     font-weight: bold;
-    color: #495057;
+    color: var(--text-secondary);
   }
 
   .comparison-field select {
     padding: 0.4rem;
-    border: 1px solid #ced4da;
+    border: 1px solid var(--border-light);
     border-radius: 4px;
     font-size: 0.85rem;
-    background: #fff;
+    background: var(--input-bg);
+    color: var(--text-color);
   }
 
   .reset-comparison-btn {
-    background: #6c757d;
-    color: white;
+    background: var(--button-bg);
+    color: var(--bg-color);
     border: none;
     border-radius: 4px;
     padding: 0.4rem 0.8rem;
@@ -230,42 +231,6 @@
   }
 
   .reset-comparison-btn:hover {
-    background: #5a6268;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .comparison-controls {
-      border-color: #555;
-    }
-
-    .comparison-header {
-      background: #444;
-      color: #f6f6f6;
-    }
-
-    .comparison-header:hover {
-      background: #555;
-    }
-
-    .comparison-label,
-    .vs,
-    .expand-icon {
-      color: #adb5bd;
-    }
-
-    .comparison-details {
-      background: #333;
-      border-color: #555;
-    }
-
-    .comparison-field label {
-      color: #adb5bd;
-    }
-
-    .comparison-field select {
-      background: #444;
-      border-color: #666;
-      color: #f6f6f6;
-    }
+    background: var(--button-bg-hover);
   }
 </style>

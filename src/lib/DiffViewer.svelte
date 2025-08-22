@@ -63,7 +63,7 @@
 
 <style>
   .diff-viewer {
-    background: white;
+    background: var(--component-bg);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -73,33 +73,17 @@
   .no-hunks {
     text-align: center;
     padding: 3rem;
-    color: #666;
+    color: var(--text-muted);
   }
 
   .no-results h3,
   .no-hunks h3 {
     margin: 0 0 0.5rem 0;
-    color: #333;
+    color: var(--text-color);
   }
 
   .no-results p,
   .no-hunks p {
     margin: 0;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .diff-viewer {
-      background: #2a2a2a;
-    }
-
-    .no-results,
-    .no-hunks {
-      color: #ccc;
-    }
-
-    .no-results h3,
-    .no-hunks h3 {
-      color: #f6f6f6;
-    }
   }
 </style>

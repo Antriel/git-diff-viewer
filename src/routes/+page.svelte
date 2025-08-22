@@ -5,6 +5,7 @@
   import DiffHeader from "../lib/DiffHeader.svelte";
   import DirectorySelector from "../lib/DirectorySelector.svelte";
   import AboutModal from "../lib/AboutModal.svelte";
+  import ThemeToggle from "../lib/ThemeToggle.svelte";
 
   let currentDirectory = $state("");
   /** @type {any} */
@@ -19,6 +20,8 @@
   let comparisonSource = $state("working");
   let comparisonTarget = $state("HEAD");
   let showAbout = $state(false);
+  let theme = $state("auto");
+  let appliedTheme = $state("light");
 
   function getSavedProjects() {
     return JSON.parse(localStorage.getItem("gitDiffProjects") || "[]");
@@ -65,7 +68,39 @@
     loadGitDiff();
   });
 
+  function updateAppliedTheme() {
+    if (theme === "auto") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      appliedTheme = mediaQuery.matches ? "dark" : "light";
+    } else {
+      appliedTheme = theme;
+    }
+  }
+
+  function applyThemeToBody() {
+    // Remove existing theme classes
+    document.body.classList.remove("dark-theme", "light-theme");
+    // Apply current theme
+    if (appliedTheme === "dark") {
+      document.body.classList.add("dark-theme");
+    } else {
+      document.body.classList.add("light-theme");
+    }
+  }
+
   onMount(() => {
+    // Set up theme detection
+    updateAppliedTheme();
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleThemeChange = () => {
+      if (theme === "auto") {
+        updateAppliedTheme();
+      }
+    };
+    mediaQuery.addEventListener("change", handleThemeChange);
+
     // Load the last opened project
     const savedProjects = getSavedProjects();
     if (savedProjects.length > 0) {
@@ -73,6 +108,17 @@
       currentDirectory = lastProject.path;
       loadGitDiff();
     }
+
+    // Cleanup listener on unmount
+    return () => {
+      mediaQuery.removeEventListener("change", handleThemeChange);
+    };
+  });
+
+  // Update applied theme when theme selection changes
+  $effect(() => {
+    updateAppliedTheme();
+    applyThemeToBody();
   });
 
   function saveProjectToHistory(directory) {
@@ -109,6 +155,7 @@
     <div class="header-left">
       <h1>Git Diff Viewer</h1>
       <AboutModal bind:show={showAbout} />
+      <ThemeToggle bind:theme />
     </div>
     <DirectorySelector
       {currentDirectory}
@@ -175,11 +222,86 @@
   :global(body) {
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
       "Liberation Mono", monospace;
-    background: #f5f5f5;
+    background: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 0;
     line-height: 1.4;
     overflow-y: scroll;
+  }
+
+  :global(body.dark-theme) {
+    /* Base colors */
+    --bg-color: #1a1a1a;
+    --text-color: #f6f6f6;
+    --header-bg: #1a1a1a;
+    --welcome-bg: #2a2a2a;
+    --border-color: #444;
+    --error-bg: #3a1f1f;
+    --error-border: #ff6b6b;
+
+    /* Component backgrounds */
+    --component-bg: #333;
+    --component-bg-hover: #555;
+    --input-bg: #3a3a3a;
+    --modal-bg: #2a2a2a;
+
+    /* Text colors */
+    --text-secondary: #ccc;
+    --text-muted: #999;
+    --link-color: #66b3ff;
+
+    /* Button colors */
+    --button-bg: #444;
+    --button-bg-hover: #555;
+    --button-border: #666;
+
+    /* Diff colors */
+    --line-num-bg: #333;
+    --context-bg: #2a2a2a;
+    --added-bg: #1f3a2e;
+    --removed-bg: #3a1f1f;
+
+    /* Border colors */
+    --border-light: #555;
+    --border-medium: #666;
+  }
+
+  :global(body.light-theme) {
+    /* Base colors */
+    --bg-color: #f5f5f5;
+    --text-color: #333;
+    --header-bg: #f5f5f5;
+    --welcome-bg: #fff;
+    --border-color: #ddd;
+    --error-bg: #ffe6e6;
+    --error-border: #ff6b6b;
+
+    /* Component backgrounds */
+    --component-bg: #f8f9fa;
+    --component-bg-hover: #e9ecef;
+    --input-bg: #fff;
+    --modal-bg: #fff;
+
+    /* Text colors */
+    --text-secondary: #666;
+    --text-muted: #999;
+    --link-color: #0066cc;
+
+    /* Button colors */
+    --button-bg: #f8f9fa;
+    --button-bg-hover: #e9ecef;
+    --button-border: #dee2e6;
+
+    /* Diff colors */
+    --line-num-bg: #f8f9fa;
+    --context-bg: #fff;
+    --added-bg: #e8f5e8;
+    --removed-bg: #ffe6e6;
+
+    /* Border colors */
+    --border-light: #dee2e6;
+    --border-medium: #adb5bd;
   }
 
   .container {
@@ -197,7 +319,7 @@
     gap: 1rem;
     position: sticky;
     top: 0;
-    background: #f5f5f5;
+    background: var(--header-bg);
     z-index: 100;
     padding: 1rem;
     margin: -1rem -1rem 0 -1rem;
@@ -211,7 +333,7 @@
 
   h1 {
     margin: 0;
-    color: #333;
+    color: var(--text-color);
     font-size: 1.8rem;
   }
 
@@ -242,8 +364,8 @@
   }
 
   .error {
-    background: #ffe6e6;
-    border: 1px solid #ff6b6b;
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
     border-radius: 8px;
     padding: 1.5rem;
     margin: 2rem 0;
@@ -262,14 +384,14 @@
   .no-changes {
     text-align: center;
     padding: 3rem;
-    background: #fff;
+    background: var(--welcome-bg);
     border-radius: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
   }
 
   .no-changes h3 {
     margin: 0 0 0.5rem 0;
-    color: #333;
+    color: var(--text-color);
   }
 
   .no-changes p {
@@ -280,14 +402,14 @@
   .welcome {
     text-align: center;
     padding: 4rem 2rem;
-    background: #fff;
+    background: var(--welcome-bg);
     border-radius: 8px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
   }
 
   .welcome h2 {
     margin: 0 0 1rem 0;
-    color: #333;
+    color: var(--text-color);
   }
 
   .welcome p {
@@ -315,46 +437,9 @@
   .diff-header-wrapper {
     position: sticky;
     top: 72px; /* Height of header */
-    background: #f5f5f5;
+    background: var(--header-bg);
     z-index: 99;
     margin: 0 -1rem 1rem -1rem;
     padding: 1rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(body) {
-      background: #1a1a1a;
-      color: #f6f6f6;
-    }
-
-    header {
-      background: #1a1a1a;
-    }
-
-    h1 {
-      color: #f6f6f6;
-    }
-
-    .diff-header-wrapper {
-      background: #1a1a1a;
-    }
-
-    .welcome,
-    .no-changes {
-      background: #2a2a2a;
-      border-color: #444;
-    }
-
-    .welcome h2,
-    .welcome p,
-    .no-changes h3,
-    .no-changes p {
-      color: #f6f6f6;
-    }
-
-    .error {
-      background: #3a1f1f;
-      border-color: #ff6b6b;
-    }
   }
 </style>

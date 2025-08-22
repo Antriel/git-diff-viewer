@@ -14,6 +14,7 @@
     display: flex;
     align-items: center;
     font-size: 0.85rem;
+    color: var(--text-color);
   }
 
   .untracked-toggle label {
@@ -26,11 +27,5 @@
 
   .untracked-toggle input[type="checkbox"] {
     cursor: pointer;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .untracked-toggle {
-      color: #f6f6f6;
-    }
   }
 </style>

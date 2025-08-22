@@ -112,13 +112,14 @@
 
   .path-label {
     font-weight: 600;
-    color: #666;
+    color: var(--text-muted);
     white-space: nowrap;
   }
 
   .path {
     font-family: monospace;
-    background: #e8e8e8;
+    background: var(--component-bg-hover);
+    color: var(--text-color);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     font-size: 0.9rem;
@@ -126,7 +127,7 @@
   }
 
   .no-path {
-    color: #999;
+    color: var(--text-muted);
     font-style: italic;
   }
 
@@ -148,22 +149,23 @@
   }
 
   .primary {
-    background: #0066cc;
-    color: white;
+    background: var(--link-color);
+    color: var(--bg-color);
   }
 
   .primary:hover {
-    background: #0052a3;
+    background: var(--link-color);
+    opacity: 0.9;
   }
 
   .secondary {
-    background: #f0f0f0;
-    color: #333;
-    border: 1px solid #ccc;
+    background: var(--component-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-light);
   }
 
   .secondary:hover {
-    background: #e0e0e0;
+    background: var(--component-bg-hover);
   }
 
   .recent-dropdown {
@@ -174,8 +176,8 @@
     position: absolute;
     top: 100%;
     right: 0;
-    background: white;
-    border: 1px solid #ccc;
+    background: var(--modal-bg);
+    border: 1px solid var(--border-light);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 10;
@@ -190,7 +192,7 @@
     padding: 0.75rem;
     background: none;
     border: none;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-light);
     cursor: pointer;
     font-size: 0.85rem;
   }
@@ -200,75 +202,25 @@
   }
 
   .recent-item:hover {
-    background: #f8f9fa;
+    background: var(--component-bg-hover);
   }
 
   .project-name {
     font-weight: 600;
-    color: #333;
+    color: var(--text-color);
     margin-bottom: 0.25rem;
   }
 
   .project-path {
     font-family: monospace;
-    color: #666;
+    color: var(--text-muted);
     font-size: 0.8rem;
     margin-bottom: 0.25rem;
   }
 
   .project-date {
-    color: #999;
+    color: var(--text-muted);
     font-size: 0.75rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .path {
-      background: #3a3a3a;
-      color: #f6f6f6;
-    }
-
-    .path-label {
-      color: #ccc;
-    }
-
-    .no-path {
-      color: #888;
-    }
-
-    .secondary {
-      background: #3a3a3a;
-      color: #f6f6f6;
-      border-color: #555;
-    }
-
-    .secondary:hover {
-      background: #4a4a4a;
-    }
-
-    .dropdown-menu {
-      background: #2a2a2a;
-      border-color: #555;
-    }
-
-    .recent-item {
-      border-color: #444;
-    }
-
-    .recent-item:hover {
-      background: #3a3a3a;
-    }
-
-    .project-name {
-      color: #f6f6f6;
-    }
-
-    .project-path {
-      color: #ccc;
-    }
-
-    .project-date {
-      color: #999;
-    }
   }
 
   @media (max-width: 768px) {

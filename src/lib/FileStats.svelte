@@ -8,7 +8,9 @@
   <span class="added">+{stats.added}</span>
   <span class="removed">-{stats.removed}</span>
   <span class="size">{(stats.size / 1024).toFixed(1)}KB</span>
-  <span class="modified" title={'Last modified: '+formatLocalTime(stats.modified)}
+  <span
+    class="modified"
+    title={"Last modified: " + formatLocalTime(stats.modified)}
     >{formatRelativeTime(stats.modified)}</span
   >
 </div>
@@ -32,22 +34,12 @@
   }
 
   .file-stats .size {
-    color: #666;
+    color: var(--text-muted);
   }
 
   .file-stats .modified {
-    color: #666;
+    color: var(--text-muted);
     cursor: help;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .file-stats .size {
-      color: #ccc;
-    }
-
-    .file-stats .modified {
-      color: #ccc;
-    }
   }
 
   @media (max-width: 768px) {

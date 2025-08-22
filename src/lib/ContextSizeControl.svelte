@@ -93,17 +93,18 @@
   }
 
   .context-controls button {
-    background: #fff;
-    border: 1px solid #ccc;
+    background: var(--component-bg);
+    border: 1px solid var(--border-light);
     border-radius: 4px;
     padding: 0.2rem 0.5rem;
     cursor: pointer;
     font-size: 0.8rem;
     transition: all 0.2s;
+    color: var(--text-color);
   }
 
   .context-controls button:hover:not(:disabled) {
-    background: #f0f0f0;
+    background: var(--component-bg-hover);
   }
 
   .context-controls button:disabled {
@@ -133,29 +134,5 @@
   .context-size.dragging {
     background: rgba(0, 0, 0, 0.1);
     cursor: ns-resize;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .context-controls {
-      color: #f6f6f6;
-    }
-
-    .context-controls button {
-      background: #444;
-      border-color: #666;
-      color: #f6f6f6;
-    }
-
-    .context-controls button:hover:not(:disabled) {
-      background: #555;
-    }
-
-    .context-size:hover {
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .context-size.dragging {
-      background: rgba(255, 255, 255, 0.1);
-    }
   }
 </style>

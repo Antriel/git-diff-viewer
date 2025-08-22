@@ -29,17 +29,7 @@
   }
 
   .stats .placeholder {
-    color: #6c757d;
+    color: var(--text-muted);
     font-style: italic;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .stats {
-      color: #f6f6f6;
-    }
-
-    .stats .placeholder {
-      color: #adb5bd;
-    }
   }
 </style>
