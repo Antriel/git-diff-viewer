@@ -1,5 +1,6 @@
 <script>
   import SearchModeSelector from "./SearchModeSelector.svelte";
+  import { debounce } from "./utils.js";
 
   let {
     searchTerm = $bindable(""),
@@ -9,8 +10,18 @@
   } = $props();
 
   let inputElement;
+  let internalSearchTerm = $state("");
+
+  const debouncedSetSearchTerm = debounce((value) => {
+    searchTerm = value;
+  }, 300);
+
+  $effect(() => {
+    debouncedSetSearchTerm(internalSearchTerm);
+  });
 
   function clearSearch() {
+    internalSearchTerm = "";
     searchTerm = "";
     if (inputElement) {
       inputElement.value = "";
@@ -51,11 +62,11 @@
       bind:this={inputElement}
       type="text"
       placeholder="Search changes... (Ctrl+F)"
-      bind:value={searchTerm}
+      bind:value={internalSearchTerm}
       onkeydown={handleKeydown}
       class="search-input"
     />
-    {#if searchTerm}
+    {#if internalSearchTerm}
       <button
         onclick={clearSearch}
         class="clear-btn"
