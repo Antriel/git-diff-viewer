@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -49,14 +50,35 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Build Tauri app
+      - name: Get package version
+        id: package-version
+        run: echo "version=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if version tag exists
+        id: tag-exists
+        run: |
+          if git rev-parse "${{ steps.package-version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Tauri app (with release)
+        if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }} # Use the tag name for releases
-          releaseName: 'Git Diff Viewer ${{ github.ref_name }}'
+          tagName: ${{ steps.package-version.outputs.version }}
+          releaseName: 'Git Diff Viewer ${{ steps.package-version.outputs.version }}'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
-          includeDebug: false
+
+      - name: Build Tauri app (no release)
+        if: github.ref != 'refs/heads/main' || steps.tag-exists.outputs.exists == 'true'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          uploadAssets: false
