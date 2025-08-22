@@ -7,6 +7,24 @@ use tauri::{command, Manager};
 use tauri_plugin_window_state::{AppHandleExt, WindowExt, StateFlags};
 use tokio::process::Command;
 
+fn create_hidden_command(program: &str) -> Command {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        let mut std_cmd = std::process::Command::new(program);
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        std_cmd.creation_flags(CREATE_NO_WINDOW);
+        
+        // Convert std::process::Command to tokio::process::Command
+        Command::from(std_cmd)
+    }
+    
+    #[cfg(not(target_os = "windows"))]
+    {
+        Command::new(program)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GitHunk {
     file_name: String,
@@ -53,7 +71,7 @@ pub struct GitRefs {
 }
 
 async fn check_editor_available(cmd: &str, args: &[&str]) -> bool {
-    Command::new(cmd)
+    create_hidden_command(cmd)
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -107,11 +125,11 @@ async fn find_available_editor() -> Result<&'static str, String> {
 
 fn build_editor_command(editor: &str, file_path: &str, line_number: Option<u32>) -> Command {
     let mut command = if editor == "cmd-code" {
-        let mut c = Command::new("cmd");
+        let mut c = create_hidden_command("cmd");
         c.arg("/c").arg("code").arg("-r");
         c
     } else {
-        Command::new(editor)
+        create_hidden_command(editor)
     };
 
     match editor {
@@ -148,7 +166,7 @@ fn build_editor_command(editor: &str, file_path: &str, line_number: Option<u32>)
 }
 
 async fn run_git_command(args: &[&str], directory: &str) -> Result<String, String> {
-    let output = Command::new("git")
+    let output = create_hidden_command("git")
         .args(args)
         .current_dir(directory)
         .stdout(Stdio::piped())
@@ -331,7 +349,7 @@ async fn get_git_diff(
 
                     // git diff --no-index returns exit code 1 when files differ, which is expected
                     // So we need to handle this manually instead of using run_git_command_optional
-                    let untracked_diff = Command::new("git")
+                    let untracked_diff = create_hidden_command("git")
                         .args(&[
                             "diff",
                             "--no-index",
