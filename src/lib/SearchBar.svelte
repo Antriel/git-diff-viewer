@@ -1,8 +1,11 @@
 <script>
+  import SearchModeSelector from "./SearchModeSelector.svelte";
+
   let {
     searchTerm = $bindable(""),
     resultsCount = $bindable(0),
     totalCount = $bindable(0),
+    searchMode = $bindable("both"),
   } = $props();
 
   let inputElement;
@@ -62,6 +65,8 @@
       </button>
     {/if}
   </div>
+
+  <SearchModeSelector bind:searchMode />
 
   <div class="search-results">
     {#if searchTerm}

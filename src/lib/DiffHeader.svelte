@@ -9,6 +9,7 @@
     gitDiffResult = null,
     contextSize = $bindable(3),
     searchTerm = $bindable(""),
+    searchMode = $bindable("both"),
     visibleCount = $bindable(0),
     totalCount = $bindable(0),
     includeUntracked = $bindable(false),
@@ -25,6 +26,7 @@
   <div class="toolbar">
     <SearchBar
       bind:searchTerm
+      bind:searchMode
       bind:resultsCount={visibleCount}
       bind:totalCount
     />

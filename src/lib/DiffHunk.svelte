@@ -9,6 +9,7 @@
   let {
     hunk,
     searchTerm = "",
+    searchMode = "both",
     currentDirectory = "",
     hunkIndex = 0,
   } = $props();
@@ -91,10 +92,18 @@
   async function applyMarkJsHighlighting() {
     if (!codeElement) return;
 
-    // Find all line-content elements within added/removed lines
-    const lineContents = codeElement.querySelectorAll(
-      ".code-line.added .line-content, .code-line.removed .line-content"
-    );
+    // Find line-content elements based on search mode
+    let selector = "";
+    if (searchMode === "added") {
+      selector = ".code-line.added .line-content";
+    } else if (searchMode === "removed") {
+      selector = ".code-line.removed .line-content";
+    } else {
+      selector =
+        ".code-line.added .line-content, .code-line.removed .line-content";
+    }
+
+    const lineContents = codeElement.querySelectorAll(selector);
 
     if (lineContents.length === 0) return;
 
@@ -119,11 +128,25 @@
   }
 
   function applySearchHighlighting() {
-    // Check for matches and set isMatch appropriately
+    // Check for matches and set isMatch appropriately based on search mode
     renderedLines = baseLines.map((baseLine) => {
+      let shouldHighlight = false;
+
+      if (searchTerm) {
+        if (searchMode === "added" && baseLine.isAdded) {
+          shouldHighlight = true;
+        } else if (searchMode === "removed" && baseLine.isRemoved) {
+          shouldHighlight = true;
+        } else if (
+          searchMode === "both" &&
+          (baseLine.isAdded || baseLine.isRemoved)
+        ) {
+          shouldHighlight = true;
+        }
+      }
+
       const isMatch =
-        searchTerm &&
-        (baseLine.isAdded || baseLine.isRemoved) &&
+        shouldHighlight &&
         baseLine.rawContent.toLowerCase().includes(searchTerm.toLowerCase());
 
       return {

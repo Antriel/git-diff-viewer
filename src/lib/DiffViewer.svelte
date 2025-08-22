@@ -7,6 +7,7 @@
     currentDirectory = "",
     visibleCount = $bindable(0),
     totalCount = $bindable(0),
+    searchMode = "both",
   } = $props();
 
   // Use derived state to automatically compute filtered hunks
@@ -24,12 +25,21 @@
         return true;
       }
 
-      // Search in hunk lines (only added/removed lines)
+      // Search in hunk lines based on search mode
       return hunk.hunk_lines.some((line) => {
-        if (line.startsWith("+") || line.startsWith("-")) {
-          return line.toLowerCase().includes(searchLower);
+        const isAdded = line.startsWith("+");
+        const isRemoved = line.startsWith("-");
+
+        let shouldSearchLine = false;
+        if (searchMode === "added" && isAdded) {
+          shouldSearchLine = true;
+        } else if (searchMode === "removed" && isRemoved) {
+          shouldSearchLine = true;
+        } else if (searchMode === "both" && (isAdded || isRemoved)) {
+          shouldSearchLine = true;
         }
-        return false;
+
+        return shouldSearchLine && line.toLowerCase().includes(searchLower);
       });
     });
   });
@@ -55,7 +65,13 @@
   {:else}
     <div>
       {#each filteredHunks as hunk, index (hunk)}
-        <DiffHunk {hunk} {searchTerm} {currentDirectory} hunkIndex={index} />
+        <DiffHunk
+          {hunk}
+          {searchTerm}
+          {searchMode}
+          {currentDirectory}
+          hunkIndex={index}
+        />
       {/each}
     </div>
   {/if}

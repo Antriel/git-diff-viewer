@@ -18,6 +18,7 @@
   let error = $state("");
   let currentContextSize = $state(parseInt(localStorage.getItem("gitDiffContextSize") || "3", 10));
   let searchTerm = $state("");
+  let searchMode = $state(localStorage.getItem("gitDiffSearchMode") || "both");
   let visibleCount = $state(0);
   let totalCount = $state(0);
   let includeUntracked = $state(localStorage.getItem("gitDiffIncludeUntracked") === "true");
@@ -151,6 +152,11 @@
     localStorage.setItem("gitDiffTheme", theme);
   });
 
+  // Save search mode preference
+  $effect(() => {
+    localStorage.setItem("gitDiffSearchMode", searchMode);
+  });
+
   function saveProjectToHistory(directory) {
     const savedProjects = getSavedProjects();
     const existing = savedProjects.find((p) => p.path === directory);
@@ -199,6 +205,7 @@
         {gitDiffResult}
         bind:contextSize={currentContextSize}
         bind:searchTerm
+        bind:searchMode
         bind:visibleCount
         bind:totalCount
         bind:includeUntracked
@@ -227,6 +234,7 @@
     <DiffViewer
       {gitDiffResult}
       bind:searchTerm
+      {searchMode}
       {currentDirectory}
       bind:visibleCount
       bind:totalCount
@@ -289,6 +297,11 @@
     --text-muted: #999;
     --link-color: #66b3ff;
 
+    /* Accent colors */
+    --accent-color: #66b3ff;
+    --accent-hover: #4da3ff;
+    --accent-text: #0a0a0a;
+
     /* Button colors */
     --button-bg: #444;
     --button-bg-hover: #555;
@@ -325,6 +338,11 @@
     --text-secondary: #666;
     --text-muted: #999;
     --link-color: #0066cc;
+
+    /* Accent colors */
+    --accent-color: #0066cc;
+    --accent-hover: #0052a3;
+    --accent-text: #ffffff;
 
     /* Button colors */
     --button-bg: #f8f9fa;
@@ -457,7 +475,7 @@
   }
 
   button {
-    background: #0066cc;
+    background: var(--accent-color);
     color: white;
     border: none;
     padding: 0.5rem 1rem;
@@ -469,7 +487,7 @@
   }
 
   button:hover {
-    background: #0052a3;
+    background: var(--accent-hover);
   }
 
   .diff-header-wrapper {
