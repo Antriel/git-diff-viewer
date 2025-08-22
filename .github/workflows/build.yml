@@ -52,16 +52,49 @@ jobs:
 
       - name: Get package version
         id: package-version
+        shell: bash
         run: echo "version=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Check if version tag exists
         id: tag-exists
+        shell: bash
         run: |
           if git rev-parse "${{ steps.package-version.outputs.version }}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Generate release notes
+        id: release-notes
+        if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
+        shell: bash
+        run: |
+          # Get the latest tag (if any)
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          # Generate changelog
+          if [ -n "$LATEST_TAG" ]; then
+            echo "## What's Changed" > release_notes.md
+            echo "" >> release_notes.md
+            git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD >> release_notes.md
+            echo "" >> release_notes.md
+            echo "" >> release_notes.md
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}" >> release_notes.md
+          else
+            echo "## What's Changed" > release_notes.md
+            echo "" >> release_notes.md
+            echo "Initial release of Git Diff Viewer!" >> release_notes.md
+            echo "" >> release_notes.md
+            git log --pretty=format:"- %s (%h)" >> release_notes.md
+          fi
+          
+          # Set output
+          {
+            echo 'notes<<EOF'
+            cat release_notes.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
 
       - name: Build Tauri app (with release)
         if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
@@ -71,7 +104,7 @@ jobs:
         with:
           tagName: ${{ steps.package-version.outputs.version }}
           releaseName: 'Git Diff Viewer ${{ steps.package-version.outputs.version }}'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseBody: ${{ steps.release-notes.outputs.notes }}
           releaseDraft: false
           prerelease: false
 
