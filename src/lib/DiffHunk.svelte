@@ -22,15 +22,14 @@
   let hunkElement;
   let isVisible = $state(false);
   let observer;
+  let firstChangeLineNumber = 0;
 
   async function openFileInEditor() {
     try {
-      const { newStart } = parseHunkHeader(hunk.hunk_header);
-
       await invoke("open_file_in_editor", {
         filePath: hunk.file_name,
         workingDirectory: currentDirectory,
-        lineNumber: newStart,
+        lineNumber: firstChangeLineNumber ?? parseHunkHeader(hunk.hunk_header).newStart,
       });
     } catch (error) {
       console.error("Failed to open file in editor:", error);
@@ -62,6 +61,7 @@
 
     let oldLineNum = oldStart;
     let newLineNum = newStart;
+    firstChangeLineNumber = 0; // Reset for each hunk
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -74,6 +74,9 @@
 
       let oldNum = " ";
       let newNum = " ";
+      if(firstChangeLineNumber === 0 && (isAdded || isRemoved)) {
+        firstChangeLineNumber = newLineNum;
+      }
 
       if (isContext) {
         oldNum = String(oldLineNum++);
@@ -201,9 +204,7 @@
         (entries) => {
           const entry = entries[0];
           if (entry.isIntersecting && !isVisible) {
-            isVisible = true;
-            // Trigger highlighting when becoming visible
-            buildBaseLines();
+            isVisible = true; // Triggers `buidlBaseLines` effect
           }
         },
         { threshold: 0.1, rootMargin: "100px" }
