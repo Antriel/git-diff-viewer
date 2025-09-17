@@ -24,12 +24,12 @@
   }
 
   .file-stats .added {
-    color: #28a745;
+    color: var(--added-text);
     font-weight: bold;
   }
 
   .file-stats .removed {
-    color: #dc3545;
+    color: var(--removed-text);
     font-weight: bold;
   }
 

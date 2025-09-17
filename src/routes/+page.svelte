@@ -319,6 +319,8 @@
     --context-bg: #2a2a2a;
     --added-bg: #1f3a2e;
     --removed-bg: #3a1f1f;
+    --added-text: #28a745;
+    --removed-text: #dc3545;
 
     /* Border colors */
     --border-light: #555;
@@ -366,6 +368,8 @@
     --context-bg: #fff;
     --added-bg: #e8f5e8;
     --removed-bg: #ffe6e6;
+    --added-text: #28a745;
+    --removed-text: #dc3545;
 
     /* Border colors */
     --border-light: #dee2e6;
