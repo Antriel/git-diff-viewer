@@ -124,7 +124,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          uploadAssets: false
+          includeRelease: false
 
       - name: Upload test build artifacts
         if: github.ref != 'refs/heads/main' || steps.tag-exists.outputs.exists == 'true'
