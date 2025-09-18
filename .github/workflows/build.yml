@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # ensure full history and tags for changelog
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -52,12 +54,10 @@ jobs:
 
       - name: Get package version
         id: package-version
-        shell: bash
         run: echo "version=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Check if version tag exists
         id: tag-exists
-        shell: bash
         run: |
           if git rev-parse "${{ steps.package-version.outputs.version }}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -68,30 +68,31 @@ jobs:
       - name: Generate release notes
         id: release-notes
         if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
-        shell: bash
         run: |
-          # Get the latest tag (if any)
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          
-          # Generate changelog
           if [ -n "$LATEST_TAG" ]; then
             NOTES="## What's Changed
-          
-          $(git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
-          
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}"
+
+$(git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
+
+**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}"
           else
             NOTES="## What's Changed
-          
-          Initial release of Git Diff Viewer!
-          
-          $(git log --pretty=format:"- %s (%h)")"
+
+Initial release 🎉
+
+$(git log --pretty=format:"- %s (%h)")"
           fi
-          
-          # Set output using simpler approach
+
           echo "notes<<EOFMARKER" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOFMARKER" >> $GITHUB_OUTPUT
+
+      - name: Sync Tauri version with package.json
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          jq ".package.version = \"$VERSION\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp
+          mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
 
       - name: Build Tauri app (with release)
         if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
@@ -112,3 +113,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           uploadAssets: false
+
+      - name: Upload test build artifacts
+        if: github.ref != 'refs/heads/main' || steps.tag-exists.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-build-${{ matrix.platform }}
+          path: src-tauri/target/release/bundle/
