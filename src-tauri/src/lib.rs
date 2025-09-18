@@ -319,6 +319,10 @@ async fn get_git_diff(
                 vec!["diff", &context_arg, "--staged"]
             }
         }
+        "unstaged" => {
+            // Compare unstaged files against index (ignore target)
+            vec!["diff", &context_arg]
+        }
         "working" => {
             // Compare working directory against target
             vec!["diff", &context_arg, target]

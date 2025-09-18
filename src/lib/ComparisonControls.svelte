@@ -16,6 +16,7 @@
   function getDisplayName(value) {
     if (value === "working") return "Working Directory";
     if (value === "staged") return "Staged Files";
+    if (value === "unstaged") return "Unstaged Files";
     if (value === "HEAD") return "HEAD";
 
     if (gitRefs?.recent_commits) {
@@ -76,7 +77,7 @@
       <span class="comparison-label">Comparing:</span>
       <strong>{getDisplayName(comparisonSource)}</strong>
       <span class="vs">vs</span>
-      <strong>{getDisplayName(comparisonTarget)}</strong>
+      <strong>{comparisonSource === "unstaged" ? "INDEX" : getDisplayName(comparisonTarget)}</strong>
     </div>
     <div class="expand-icon" class:expanded={isExpanded}>▼</div>
   </div>
@@ -89,6 +90,7 @@
           <select id="source-select" bind:value={comparisonSource}>
             <option value="working">Working Directory</option>
             <option value="staged">Staged Files</option>
+            <option value="unstaged">Unstaged Files</option>
             {#if gitRefs?.branches}
               <optgroup label="Branches">
                 {#each gitRefs.branches as branch}
@@ -108,23 +110,29 @@
 
         <div class="comparison-field">
           <label for="target-select">Compare to:</label>
-          <select id="target-select" bind:value={comparisonTarget}>
-            <option value="HEAD">HEAD</option>
-            {#if gitRefs?.branches}
-              <optgroup label="Branches">
-                {#each gitRefs.branches as branch}
-                  <option value={branch.name}>{branch.name}</option>
-                {/each}
-              </optgroup>
-            {/if}
-            {#if gitRefs?.recent_commits}
-              <optgroup label="Recent Commits">
-                {#each gitRefs.recent_commits as commit}
-                  <option value={commit.short_hash}>{commit.name}</option>
-                {/each}
-              </optgroup>
-            {/if}
-          </select>
+          {#if comparisonSource === "unstaged"}
+            <select id="target-select" disabled>
+              <option>INDEX</option>
+            </select>
+          {:else}
+            <select id="target-select" bind:value={comparisonTarget}>
+              <option value="HEAD">HEAD</option>
+              {#if gitRefs?.branches}
+                <optgroup label="Branches">
+                  {#each gitRefs.branches as branch}
+                    <option value={branch.name}>{branch.name}</option>
+                  {/each}
+                </optgroup>
+              {/if}
+              {#if gitRefs?.recent_commits}
+                <optgroup label="Recent Commits">
+                  {#each gitRefs.recent_commits as commit}
+                    <option value={commit.short_hash}>{commit.name}</option>
+                  {/each}
+                </optgroup>
+              {/if}
+            </select>
+          {/if}
         </div>
 
         <button
