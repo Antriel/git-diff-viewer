@@ -71,28 +71,36 @@ jobs:
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -n "$LATEST_TAG" ]; then
-            NOTES="## What's Changed
-
-$(git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
-
-**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}"
+            {
+              echo "notes<<EOFNOTES"
+              echo "## What's Changed"
+              echo ""
+              git log --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD
+              echo ""
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_TAG}...${{ steps.package-version.outputs.version }}"
+              echo "EOFNOTES"
+            } >> $GITHUB_OUTPUT
           else
-            NOTES="## What's Changed
-
-Initial release 🎉
-
-$(git log --pretty=format:"- %s (%h)")"
+            {
+              echo "notes<<EOFNOTES"
+              echo "## What's Changed"
+              echo ""
+              echo "Initial release 🎉"
+              echo ""
+              git log --pretty=format:"- %s (%h)"
+              echo "EOFNOTES"
+            } >> $GITHUB_OUTPUT
           fi
-
-          echo "notes<<EOFMARKER" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOFMARKER" >> $GITHUB_OUTPUT
 
       - name: Sync Tauri version with package.json
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          jq ".package.version = \"$VERSION\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp
-          mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          node -e "
+            const fs = require('fs');
+            const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+            config.package.version = process.argv[1];
+            fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));
+          " "$VERSION"
 
       - name: Build Tauri app (with release)
         if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
