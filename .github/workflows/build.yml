@@ -98,7 +98,7 @@ jobs:
           node -e "
             const fs = require('fs');
             const config = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
-            config.package.version = process.argv[1];
+            config.version = process.argv[1];
             fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(config, null, 2));
           " "$VERSION"
 
