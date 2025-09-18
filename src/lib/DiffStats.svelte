@@ -5,8 +5,8 @@
 <div class="stats">
   {#if gitDiffResult}
     <strong>{gitDiffResult.total_stats.files} files</strong> changed,
-    <span class="added">+{gitDiffResult.total_stats.added}</span>,
-    <span class="removed">-{gitDiffResult.total_stats.removed}</span>
+    <span class="stats-added">+{gitDiffResult.total_stats.added}</span>,
+    <span class="stats-removed">-{gitDiffResult.total_stats.removed}</span>
   {:else}
     <span class="placeholder">No diff data loaded</span>
   {/if}
@@ -14,19 +14,10 @@
 
 <style>
   .stats {
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
   }
 
-  .stats .added {
-    color: var(--added-text);
-    font-weight: bold;
-  }
-
-  .stats .removed {
-    color: var(--removed-text);
-    font-weight: bold;
-  }
 
   .stats .placeholder {
     color: var(--text-muted);

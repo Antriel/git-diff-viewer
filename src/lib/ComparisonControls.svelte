@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
+  import { createEnterSpaceHandler } from "./utils.js";
 
   let {
     currentDirectory = "",
@@ -45,6 +46,10 @@
     isExpanded = !isExpanded;
   }
 
+  const handleToggleKeydown = createEnterSpaceHandler(() => {
+    toggleExpanded();
+  });
+
   onMount(() => {
     if (currentDirectory) {
       loadGitRefs();
@@ -62,7 +67,7 @@
   <div
     class="comparison-header"
     onclick={toggleExpanded}
-    onkeydown={(e) => (e.key === "Enter" || e.key === " ") && toggleExpanded()}
+    onkeydown={handleToggleKeydown}
     tabindex="0"
     role="button"
     aria-expanded={isExpanded}
@@ -124,7 +129,7 @@
 
         <button
           onclick={resetComparison}
-          class="reset-comparison-btn"
+          class="btn-icon"
           title="Reset to default"
         >
           ↺
@@ -218,19 +223,4 @@
     color: var(--text-color);
   }
 
-  .reset-comparison-btn {
-    background: var(--button-bg);
-    color: var(--bg-color);
-    border: none;
-    border-radius: 4px;
-    padding: 0.4rem 0.8rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    height: fit-content;
-    transition: all 0.2s;
-  }
-
-  .reset-comparison-btn:hover {
-    background: var(--button-bg-hover);
-  }
 </style>

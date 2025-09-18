@@ -32,7 +32,7 @@
     />
     <UntrackedToggle bind:includeUntracked />
     <ContextSizeControl bind:contextSize />
-    <button onclick={() => onRefresh()} class="refresh-btn" title="Refresh">
+    <button onclick={() => onRefresh()} class="btn-icon" title="Refresh">
       🔄
     </button>
   </div>
@@ -47,7 +47,7 @@
 <style>
   .diff-header {
     background: var(--component-bg);
-    padding: 1rem;
+    padding: 0.5rem;
     border: 1px solid var(--border-light);
     border-radius: 8px;
     margin-bottom: 0;
@@ -60,18 +60,4 @@
     flex-wrap: wrap;
   }
 
-  .refresh-btn {
-    background: var(--button-bg);
-    border: 1px solid var(--button-border);
-    border-radius: 6px;
-    padding: 0.5rem;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.2s;
-    color: var(--text-color);
-  }
-
-  .refresh-btn:hover {
-    background: var(--button-bg-hover);
-  }
 </style>

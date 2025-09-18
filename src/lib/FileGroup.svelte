@@ -2,7 +2,7 @@
   import HunkDisplay from "./HunkDisplay.svelte";
   import FileStats from "./FileStats.svelte";
   import { invoke } from "@tauri-apps/api/core";
-  import { parseHunkHeader } from "./utils.js";
+  import { parseHunkHeader, openFileInEditor } from "./utils.js";
 
   let {
     fileName,
@@ -31,42 +31,36 @@
     };
   });
 
-  async function openFileInEditor() {
-    try {
-      // Calculate the first change line number from the first hunk
-      const firstHunk = hunks[0];
-      if (firstHunk) {
-        // This logic is duplicated from DiffHunk - we might want to extract it
-        const lines = firstHunk.hunk_lines;
-        const { newStart } = parseHunkHeader(firstHunk.hunk_header);
+  async function handleOpenFileInEditor() {
+    // Calculate the first change line number from the first hunk
+    const firstHunk = hunks[0];
+    let lineNumber = 1;
 
-        let newLineNum = newStart;
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          const prefix = line[0];
-          const isAdded = prefix === "+";
-          const isRemoved = prefix === "-";
+    if (firstHunk) {
+      const lines = firstHunk.hunk_lines;
+      const { newStart } = parseHunkHeader(firstHunk.hunk_header);
 
-          if (firstChangeLineNumber === 0 && (isAdded || isRemoved)) {
-            firstChangeLineNumber = newLineNum;
-            break;
-          }
+      let newLineNum = newStart;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const prefix = line[0];
+        const isAdded = prefix === "+";
+        const isRemoved = prefix === "-";
 
-          if (prefix === " " || isAdded) {
-            newLineNum++;
-          }
+        if (firstChangeLineNumber === 0 && (isAdded || isRemoved)) {
+          firstChangeLineNumber = newLineNum;
+          break;
+        }
+
+        if (prefix === " " || isAdded) {
+          newLineNum++;
         }
       }
 
-      await invoke("open_file_in_editor", {
-        filePath: fileName,
-        workingDirectory: currentDirectory,
-        lineNumber: firstChangeLineNumber || (firstHunk ? parseHunkHeader(firstHunk.hunk_header).newStart : 1),
-      });
-    } catch (error) {
-      console.error("Failed to open file in editor:", error);
-      alert(`Failed to open file: ${error}`);
+      lineNumber = firstChangeLineNumber || newStart;
     }
+
+    await openFileInEditor(invoke, fileName, currentDirectory, lineNumber);
   }
 </script>
 
@@ -76,8 +70,8 @@
       <strong class="file-name">{fileName}</strong>
       <span class="hunk-count">{hunks.length} hunk{hunks.length !== 1 ? 's' : ''}</span>
       <button
-        class="open-file-btn"
-        onclick={openFileInEditor}
+        class="btn-icon open-file-btn"
+        onclick={handleOpenFileInEditor}
         title="Open file in editor">📂</button>
     </div>
     <FileStats stats={totalStats} />
@@ -142,24 +136,16 @@
   }
 
   .open-file-btn {
-    background: none;
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
     color: var(--text-muted);
-    transition: all 0.2s ease;
     margin-left: 0.5rem;
   }
 
   .open-file-btn:hover {
-    background: var(--component-bg-hover);
     border-color: var(--border-medium);
     color: var(--text-color);
   }
 
   .open-file-btn:active {
-    background: var(--component-bg-hover);
     opacity: 0.8;
   }
 

@@ -495,9 +495,116 @@
     font-size: 1.1rem;
   }
 
+  /* Button utility classes */
+  :global(.btn-base) {
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  :global(.btn-primary) {
+    background: var(--accent-color);
+    color: var(--accent-text);
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  :global(.btn-primary:hover) {
+    background: var(--accent-hover);
+  }
+
+  :global(.btn-secondary) {
+    background: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-light);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  :global(.btn-secondary:hover) {
+    background: var(--button-bg-hover);
+  }
+
+  :global(.btn-icon) {
+    background: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-light);
+    /* padding: 0.4rem; */
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  :global(.btn-icon:hover) {
+    background: var(--button-bg-hover);
+  }
+
+  :global(.btn-link) {
+    background: none;
+    border: none;
+    color: var(--link-color);
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    font-family: inherit;
+    font-size: inherit;
+    transition: all 0.2s;
+  }
+
+  :global(.btn-link:hover) {
+    opacity: 0.8;
+  }
+
+  /* Stats utility classes */
+  :global(.stats-added) {
+    color: var(--added-text);
+    font-weight: bold;
+  }
+
+  :global(.stats-removed) {
+    color: var(--removed-text);
+    font-weight: bold;
+  }
+
+  /* Transition utility classes */
+  :global(.transition-base) {
+    transition: all 0.2s;
+  }
+
+  :global(.transition-fast) {
+    transition: all 0.15s;
+  }
+
+  :global(.transition-slow) {
+    transition: all 0.3s;
+  }
+
+  :global(.transition-colors) {
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+
+  /* Default button (for backwards compatibility) */
   button {
     background: var(--accent-color);
-    color: white;
+    color: var(--accent-text);
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 6px;
@@ -517,6 +624,6 @@
     background: var(--header-bg);
     z-index: 99;
     margin: 0 -1rem 1rem -1rem;
-    padding: 1rem;
+    padding: 0rem 1rem 1rem 1rem;
   }
 </style>

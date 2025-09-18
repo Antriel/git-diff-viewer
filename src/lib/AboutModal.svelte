@@ -1,25 +1,44 @@
 <script>
   import { open } from "@tauri-apps/plugin-shell";
+  import { setupModalHandlers } from "./utils.js";
 
   let { show = $bindable() } = $props();
+  let overlayElement = $state();
+  let modalElement = $state();
+
+  function closeModal() {
+    show = false;
+  }
+
+  $effect(() => {
+    if (show && overlayElement) {
+      const cleanup = setupModalHandlers({
+        onClose: closeModal,
+        overlayElement: overlayElement,
+        enableEscapeClose: true,
+        enableOverlayClose: true,
+      });
+
+      return cleanup;
+    }
+  });
 </script>
 
 <div class="about-btn-container">
-  <button class="about-btn" onclick={() => (show = true)}>About</button>
+  <button class="btn-secondary transition-base" onclick={() => (show = true)}>About</button>
 </div>
 
 {#if show}
   <div
+    bind:this={overlayElement}
     class="modal-overlay"
-    onclick={(e) => e.target === e.currentTarget && (show = false)}
-    onkeydown={(e) => e.key === "Escape" && (show = false)}
     tabindex="-1"
     role="button"
   >
     <div class="modal-content">
       <div class="modal-header">
         <h2>About Git Diff Viewer</h2>
-        <button class="close-btn" onclick={() => (show = false)}>×</button>
+        <button class="btn-icon close-btn" onclick={closeModal}>×</button>
       </div>
       <div class="modal-body">
         <div class="description">
@@ -42,7 +61,7 @@
             <div class="info-item">
               <span class="label">Author</span>
               <button
-                class="link-btn"
+                class="btn-link"
                 onclick={() => open("https://antriel.com")}
               >
                 {__APP_AUTHOR__}
@@ -57,7 +76,7 @@
 
         <div class="links">
           <button
-            class="repo-btn"
+            class="btn-primary repo-btn"
             onclick={() =>
               open(__APP_REPOSITORY__.replace("git+", "").replace(".git", ""))}
           >
@@ -74,21 +93,6 @@
     display: contents;
   }
 
-  .about-btn {
-    background: var(--button-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-light);
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.8rem;
-    transition: background-color 0.2s;
-  }
-
-  .about-btn:hover {
-    background: var(--button-bg-hover);
-  }
 
   .modal-overlay {
     position: fixed;
@@ -130,17 +134,11 @@
   }
 
   .close-btn {
-    background: none;
-    border: none;
     font-size: 1.5rem;
-    cursor: pointer;
     color: var(--text-muted);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
   }
 
   .close-btn:hover {
-    background: var(--component-bg-hover);
     color: var(--text-color);
   }
 
@@ -180,22 +178,6 @@
     font-size: 0.95rem;
   }
 
-  .link-btn {
-    background: none;
-    border: none;
-    color: var(--link-color);
-    cursor: pointer;
-    padding: 0;
-    text-align: left;
-    font-size: 0.95rem;
-    text-decoration: underline;
-    font-family: inherit;
-  }
-
-  .link-btn:hover {
-    color: var(--link-color);
-    opacity: 0.8;
-  }
 
   .description {
     margin-bottom: 1.5rem;
@@ -215,22 +197,18 @@
   }
 
   .repo-btn {
-    background: var(--link-color);
-    color: var(--bg-color);
-    border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
-    cursor: pointer;
     font-weight: 500;
     font-size: 0.95rem;
-    transition: all 0.2s;
-    font-family: inherit;
   }
 
   .repo-btn:hover {
-    background: var(--link-color);
-    opacity: 0.9;
     transform: translateY(-1px);
+  }
+
+  .btn-link {
+    text-align: left;
   }
 
   @media (max-width: 480px) {

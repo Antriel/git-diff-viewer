@@ -1,5 +1,6 @@
 <script>
   import { open } from "@tauri-apps/plugin-dialog";
+  import { addClickOutsideListener } from "./utils.js";
 
   let { currentDirectory = "", onDirectorySelected = () => {} } = $props();
 
@@ -30,7 +31,7 @@
 
   function selectRecentProject(project) {
     onDirectorySelected({ directory: project.path });
-    showRecent = false;
+    closeDropdown();
   }
 
   function toggleRecent() {
@@ -46,10 +47,8 @@
     return "..." + path.slice(-(maxLength - 3));
   }
 
-  function handleClickOutside(event) {
-    if (dropdownRef && !dropdownRef.contains(event.target) && showRecent) {
-      showRecent = false;
-    }
+  function closeDropdown() {
+    showRecent = false;
   }
 
   $effect(() => {
@@ -58,15 +57,10 @@
   });
 
   $effect(() => {
-    if (showRecent) {
-      document.addEventListener('click', handleClickOutside);
-    } else {
-      document.removeEventListener('click', handleClickOutside);
+    if (showRecent && dropdownRef) {
+      const cleanup = addClickOutsideListener(dropdownRef, closeDropdown);
+      return cleanup;
     }
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
   });
 </script>
 
@@ -83,13 +77,13 @@
   </div>
 
   <div class="controls">
-    <button onclick={selectDirectory} class="primary">
+    <button onclick={selectDirectory} class="btn-primary">
       Select Directory
     </button>
 
     {#if recentProjects.length > 0}
       <div class="recent-dropdown" bind:this={dropdownRef}>
-        <button onclick={toggleRecent} class="secondary"> Recent ▼ </button>
+        <button onclick={toggleRecent} class="btn-secondary"> Recent ▼ </button>
 
         {#if showRecent}
           <div class="dropdown-menu">
@@ -157,34 +151,7 @@
   }
 
   button {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.9rem;
-    transition: all 0.2s;
     white-space: nowrap;
-  }
-
-  .primary {
-    background: var(--link-color);
-    color: var(--bg-color);
-  }
-
-  .primary:hover {
-    background: var(--link-color);
-    opacity: 0.9;
-  }
-
-  .secondary {
-    background: var(--component-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-light);
-  }
-
-  .secondary:hover {
-    background: var(--component-bg-hover);
   }
 
   .recent-dropdown {

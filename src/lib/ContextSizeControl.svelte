@@ -66,7 +66,7 @@
 
 <div class="context-controls">
   <span>Context:</span>
-  <button onclick={() => adjustContext(-3)} disabled={displayContextSize === 0}
+  <button class="btn-icon" onclick={() => adjustContext(-3)} disabled={displayContextSize === 0}
     >-</button
   >
   <span
@@ -81,7 +81,7 @@
     onmousedown={handleMouseDown}
     onwheel={handleWheel}>{displayContextSize}</span
   >
-  <button onclick={() => adjustContext(3)}>+</button>
+  <button class="btn-icon" onclick={() => adjustContext(3)}>+</button>
 </div>
 
 <style>
@@ -93,18 +93,7 @@
   }
 
   .context-controls button {
-    background: var(--component-bg);
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    padding: 0.2rem 0.5rem;
-    cursor: pointer;
     font-size: 0.8rem;
-    transition: all 0.2s;
-    color: var(--text-color);
-  }
-
-  .context-controls button:hover:not(:disabled) {
-    background: var(--component-bg-hover);
   }
 
   .context-controls button:disabled {

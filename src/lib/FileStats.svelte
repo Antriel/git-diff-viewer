@@ -5,8 +5,8 @@
 </script>
 
 <div class="file-stats">
-  <span class="added">+{stats.added}</span>
-  <span class="removed">-{stats.removed}</span>
+  <span class="stats-added">+{stats.added}</span>
+  <span class="stats-removed">-{stats.removed}</span>
   <span class="size">{(stats.size / 1024).toFixed(1)}KB</span>
   <span
     class="modified"
@@ -23,15 +23,6 @@
     white-space: nowrap;
   }
 
-  .file-stats .added {
-    color: var(--added-text);
-    font-weight: bold;
-  }
-
-  .file-stats .removed {
-    color: var(--removed-text);
-    font-weight: bold;
-  }
 
   .file-stats .size {
     color: var(--text-muted);

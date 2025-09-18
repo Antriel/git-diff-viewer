@@ -6,7 +6,7 @@ import pkg from './package.json';
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   plugins: [sveltekit()],
   
   logLevel: 'warn', // Reduce verbose logging
@@ -82,4 +82,4 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-}));
+});

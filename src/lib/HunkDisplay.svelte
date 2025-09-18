@@ -1,6 +1,6 @@
 <script>
   import { invoke } from "@tauri-apps/api/core";
-  import { parseHunkHeader, applySyntaxHighlighting } from "./utils.js";
+  import { parseHunkHeader, applySyntaxHighlighting, openFileInEditor } from "./utils.js";
   import CodeLine from "./CodeLine.svelte";
   import Mark from "mark.js";
   import { tick } from "svelte";
@@ -23,17 +23,9 @@
   let observer;
   let firstChangeLineNumber = 0;
 
-  async function openFileInEditor() {
-    try {
-      await invoke("open_file_in_editor", {
-        filePath: hunk.file_name,
-        workingDirectory: currentDirectory,
-        lineNumber: firstChangeLineNumber ?? parseHunkHeader(hunk.hunk_header).newStart,
-      });
-    } catch (error) {
-      console.error("Failed to open file in editor:", error);
-      alert(`Failed to open file: ${error}`);
-    }
+  async function handleOpenFileInEditor() {
+    const lineNumber = firstChangeLineNumber || parseHunkHeader(hunk.hunk_header).newStart;
+    await openFileInEditor(invoke, hunk.file_name, currentDirectory, lineNumber);
   }
 
   function handleTextSelection() {
@@ -256,12 +248,12 @@
     <div class="hunk-info">
       <span class="hunk-location">{hunk.hunk_header}</span>
       <span class="hunk-stats">
-        <span class="added">+{hunk.stats.added}</span>
-        <span class="removed">-{hunk.stats.removed}</span>
+        <span class="stats-added">+{hunk.stats.added}</span>
+        <span class="stats-removed">-{hunk.stats.removed}</span>
       </span>
       <button
-        class="open-file-btn"
-        onclick={openFileInEditor}
+        class="btn-icon open-file-btn"
+        onclick={handleOpenFileInEditor}
         title="Open file in editor at this hunk">📂</button>
     </div>
   </div>
@@ -297,7 +289,7 @@
 
   .hunk-header {
     background: var(--component-bg-hover);
-    padding: 0.3rem 0.6rem;
+    padding: 0.1rem 0.6rem;
     border-bottom: 1px solid var(--border-light);
     display: flex;
     justify-content: space-between;
@@ -335,35 +327,18 @@
     gap: 0.3rem;
   }
 
-  .hunk-stats .added {
-    color: var(--added-text);
-    font-weight: bold;
-  }
-
-  .hunk-stats .removed {
-    color: var(--removed-text);
-    font-weight: bold;
-  }
 
   .open-file-btn {
-    background: none;
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    padding: 0.15rem 0.3rem;
-    cursor: pointer;
     color: var(--text-muted);
-    transition: all 0.2s ease;
     font-size: 0.8rem;
   }
 
   .open-file-btn:hover {
-    background: var(--component-bg);
     border-color: var(--border-medium);
     color: var(--text-color);
   }
 
   .open-file-btn:active {
-    background: var(--component-bg);
     opacity: 0.8;
   }
 

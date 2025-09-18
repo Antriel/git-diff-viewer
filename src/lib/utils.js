@@ -87,3 +87,126 @@ export function applySyntaxHighlighting(content, fileName) {
   }
 }
 
+export async function openFileInEditor(invoke, filePath, workingDirectory, lineNumber = 1) {
+  try {
+    await invoke("open_file_in_editor", {
+      filePath,
+      workingDirectory,
+      lineNumber,
+    });
+  } catch (error) {
+    console.error("Failed to open file in editor:", error);
+    alert(`Failed to open file: ${error}`);
+  }
+}
+
+// Keyboard utilities
+export function createEscapeHandler(callback) {
+  return (event) => {
+    if (event.key === "Escape") {
+      callback(event);
+    }
+  };
+}
+
+export function createCtrlFHandler(callback) {
+  return (event) => {
+    if (event.ctrlKey && event.key === "f") {
+      event.preventDefault();
+      callback(event);
+    }
+  };
+}
+
+export function createEnterSpaceHandler(callback) {
+  return (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      callback(event);
+    }
+  };
+}
+
+export function addGlobalKeyboardListener(handler) {
+  if (typeof window !== "undefined") {
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }
+  return () => {};
+}
+
+export function addElementKeyboardListener(element, handler) {
+  if (element) {
+    element.addEventListener("keydown", handler);
+    return () => element.removeEventListener("keydown", handler);
+  }
+  return () => {};
+}
+
+// Modal/Dropdown utilities
+export function createOverlayClickHandler(targetElement, callback) {
+  return (event) => {
+    if (event.target === targetElement) {
+      callback(event);
+    }
+  };
+}
+
+export function createClickOutsideHandler(containerElement, callback) {
+  return (event) => {
+    if (containerElement && !containerElement.contains(event.target)) {
+      callback(event);
+    }
+  };
+}
+
+export function addClickOutsideListener(containerElement, callback) {
+  const handler = createClickOutsideHandler(containerElement, callback);
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }
+  return () => {};
+}
+
+export function setupModalHandlers(options = {}) {
+  const {
+    onClose,
+    onEscape = onClose,
+    overlayElement,
+    containerElement,
+    enableEscapeClose = true,
+    enableOverlayClose = true,
+    enableClickOutside = false,
+  } = options;
+
+  const cleanupFunctions = [];
+
+  // ESC key handler
+  if (enableEscapeClose && onEscape) {
+    const escapeHandler = createEscapeHandler(onEscape);
+    const cleanup = addGlobalKeyboardListener(escapeHandler);
+    cleanupFunctions.push(cleanup);
+  }
+
+  // Overlay click handler
+  if (enableOverlayClose && overlayElement && onClose) {
+    const overlayHandler = createOverlayClickHandler(overlayElement, onClose);
+    overlayElement.addEventListener("click", overlayHandler);
+    cleanupFunctions.push(() => {
+      overlayElement.removeEventListener("click", overlayHandler);
+    });
+  }
+
+  // Click outside handler
+  if (enableClickOutside && containerElement && onClose) {
+    const cleanup = addClickOutsideListener(containerElement, onClose);
+    cleanupFunctions.push(cleanup);
+  }
+
+  // Return cleanup function
+  return () => {
+    cleanupFunctions.forEach(cleanup => cleanup());
+  };
+}
+

@@ -1,6 +1,6 @@
 <script>
   import SearchModeSelector from "./SearchModeSelector.svelte";
-  import { debounce } from "./utils.js";
+  import { debounce, createEscapeHandler, createCtrlFHandler, addGlobalKeyboardListener } from "./utils.js";
 
   let {
     searchTerm = $bindable(""),
@@ -28,11 +28,9 @@
     }
   }
 
-  function handleKeydown(event) {
-    if (event.key === "Escape") {
-      clearSearch();
-    }
-  }
+  const handleKeydown = createEscapeHandler(() => {
+    clearSearch();
+  });
 
   // Focus handling
   function focusInput() {
@@ -43,17 +41,12 @@
   }
 
   // Global keyboard shortcut
-  function handleGlobalKeydown(event) {
-    if (event.ctrlKey && event.key === "f") {
-      event.preventDefault();
-      focusInput();
-    }
-  }
+  const handleGlobalKeydown = createCtrlFHandler(() => {
+    focusInput();
+  });
 
   // Mount global keyboard listener
-  if (typeof window !== "undefined") {
-    window.addEventListener("keydown", handleGlobalKeydown);
-  }
+  const cleanupGlobalListener = addGlobalKeyboardListener(handleGlobalKeydown);
 </script>
 
 <div class="search-bar">
@@ -69,7 +62,7 @@
     {#if internalSearchTerm}
       <button
         onclick={clearSearch}
-        class="clear-btn"
+        class="btn-icon clear-btn"
         title="Clear search (Esc)"
       >
         ✕
@@ -143,18 +136,13 @@
     right: 0.5rem;
     top: 50%;
     transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
     padding: 0.25rem;
     border-radius: 3px;
     color: var(--text-secondary);
     font-size: 0.8rem;
-    transition: all 0.2s;
   }
 
   .clear-btn:hover {
-    background: var(--button-bg-hover);
     color: var(--text-color);
   }
 
