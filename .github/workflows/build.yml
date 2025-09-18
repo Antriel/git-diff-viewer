@@ -128,4 +128,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tauri-app-${{ matrix.platform }}
-          path: src-tauri/target/release/bundle/**
+          path: src-tauri/target/release/bundle/**/*.{deb,rpm,AppImage,exe,msi,app,dmg}
