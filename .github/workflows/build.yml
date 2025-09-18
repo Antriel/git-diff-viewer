@@ -54,10 +54,12 @@ jobs:
 
       - name: Get package version
         id: package-version
+        shell: bash
         run: echo "version=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Check if version tag exists
         id: tag-exists
+        shell: bash
         run: |
           if git rev-parse "${{ steps.package-version.outputs.version }}" >/dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -68,6 +70,7 @@ jobs:
       - name: Generate release notes
         id: release-notes
         if: github.ref == 'refs/heads/main' && steps.tag-exists.outputs.exists == 'false'
+        shell: bash
         run: |
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -n "$LATEST_TAG" ]; then
@@ -93,6 +96,7 @@ jobs:
           fi
 
       - name: Sync Tauri version with package.json
+        shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
           node -e "
