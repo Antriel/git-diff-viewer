@@ -38,6 +38,10 @@
     }
   }
 
+  export function refreshRefs() {
+    loadGitRefs();
+  }
+
   function resetComparison() {
     comparisonSource = "working";
     comparisonTarget = "HEAD";

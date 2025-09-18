@@ -31,6 +31,8 @@
   let showAbout = $state(false);
   let theme = $state(localStorage.getItem("gitDiffTheme") || "auto");
   let appliedTheme = $state("light");
+  // svelte-ignore non_reactive_update
+  let diffHeaderRef;
 
   function getSavedProjects() {
     return JSON.parse(localStorage.getItem("gitDiffProjects") || "[]");
@@ -70,6 +72,7 @@
 
   function handleRefresh() {
     loadGitDiff();
+    diffHeaderRef?.refreshComparison();
   }
 
   // Watch for changes to comparison settings, untracked toggle, and context size
@@ -220,6 +223,7 @@
         bind:comparisonSource
         bind:comparisonTarget
         onRefresh={handleRefresh}
+        bind:this={diffHeaderRef}
       />
     </div>
   {/if}

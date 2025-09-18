@@ -18,6 +18,14 @@
     comparisonTarget = $bindable("HEAD"),
     onRefresh = () => {},
   } = $props();
+
+  let comparisonControlsRef;
+
+  export function refreshComparison() {
+    if (comparisonControlsRef) {
+      comparisonControlsRef.refreshRefs();
+    }
+  }
 </script>
 
 <div class="diff-header">
@@ -41,6 +49,7 @@
     {currentDirectory}
     bind:comparisonSource
     bind:comparisonTarget
+    bind:this={comparisonControlsRef}
   />
 </div>
 
